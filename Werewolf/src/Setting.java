@@ -9,6 +9,8 @@ public class Setting {
     final static private int numberOfMafias = 3;
     final static private LocalTime dayLength = LocalTime.of(0, 5, 0);
     final static private LocalTime votingTime = LocalTime.of(0, 0, 30);
+    final static private int serverRefreshTime = 700; // in milliseconds
+    final static private int socketTimeOut = 60 * 15; // in seconds
 
     /**
      * numberOfPlayers getter
@@ -40,5 +42,21 @@ public class Setting {
      */
     public static LocalTime getVotingTime() {
         return votingTime;
+    }
+
+    /**
+     * serverRefreshTime getter
+     * @return serverRefreshTime
+     */
+    public static int getServerRefreshTime() {
+        return serverRefreshTime;
+    }
+
+    /**
+     * socketTimeOut getter
+     * @return socketTimeOut
+     */
+    public static int getSocketTimeOut() {
+        return socketTimeOut;
     }
 }

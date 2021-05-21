@@ -11,7 +11,7 @@ import java.util.concurrent.Executors;
 public class Server {
     final static private ExecutorService playerThreads = Executors.newCachedThreadPool();
     static private ServerSocket serverSocket;
-    final static HashMap<Player, Socket> playerSocketMap = new HashMap<Player, Socket>();
+    final static HashMap<Player, ClientHandler> playerHandlers = new HashMap<Player, ClientHandler>();
     static {
         try {
             Server.serverSocket = new ServerSocket(2021);
@@ -26,16 +26,23 @@ public class Server {
      */
     public static Player newPlayer() {
         try(Socket socket = serverSocket.accept()) {
-            Server
+            ClientHandler newPlayerClientHandler = new ClientHandler(socket);
+            playerThreads.execute(newPlayerClientHandler);
+            String username = Server.getUsernameFromClient();
+
         }
         catch (IOException exception) {
             exception.printStackTrace();
         }
     }
 
-    public static void sendMessage(Socket socket) {
-
+    /**
+     * retrieve username from client
+     * @param clientHandler clientHandler of the client
+     * @return result username
+     */
+    private static String getUsernameFromClient(ClientHandler clientHandler) {
+        clientHandler.sendMessage(new Message("Please enter a username: ", new God(), new Citizen("Unknown")));
+        
     }
-
-
 }
