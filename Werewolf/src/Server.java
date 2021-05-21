@@ -1,23 +1,41 @@
 import java.io.IOException;
+import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.HashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Server class, handles interactions with clients, like send message, receive message, etc
  */
-public class Server implements Runnable {
+public class Server {
+    final static private ExecutorService playerThreads = Executors.newCachedThreadPool();
+    static private ServerSocket serverSocket;
+    final static HashMap<Player, Socket> playerSocketMap = new HashMap<Player, Socket>();
+    static {
+        try {
+            Server.serverSocket = new ServerSocket(2021);
+        } catch (IOException ioException) {
+            ioException.printStackTrace();
+        }
+    }
+
     /**
-     * When an object implementing interface {@code Runnable} is used
-     * to create a thread, starting the thread causes the object's
-     * {@code run} method to be called in that separately executing
-     * thread.
-     * <p>
-     * The general contract of the method {@code run} is that it may
-     * take any action whatsoever.
-     *
-     * @see Thread#run()
+     * connect a new player to server and return it
+     * @return new player
      */
-    @Override
-    public void run() {
+    public static Player newPlayer() {
+        try(Socket socket = serverSocket.accept()) {
+            Server
+        }
+        catch (IOException exception) {
+            exception.printStackTrace();
+        }
+    }
+
+    public static void sendMessage(Socket socket) {
 
     }
+
+
 }

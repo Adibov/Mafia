@@ -1,5 +1,6 @@
 import java.io.IOException;
 import java.net.Socket;
+import java.util.ArrayList;
 
 /**
  * God class, represent god of the game. In other words, it manages game
@@ -7,6 +8,9 @@ import java.net.Socket;
  * @version 1.0
  */
 public class God extends Person {
+    final private ArrayList<Player> players = new ArrayList<Player>();
+    final private ArrayList<Player> alivePlayers = new ArrayList<Player>();
+
     /**
      * class constructor
      */
@@ -18,11 +22,25 @@ public class God extends Person {
      * start a new game
      */
     public void startNewGame() {
-        try (Socket gameSocket = new Socket("127.0.0.1", 2021)) {
+        waitForPlayersToJoin();
+    }
 
+    /**
+     * wait for all players to join
+     */
+    public void waitForPlayersToJoin() {
+        while (players.size() < Setting.getNumberOfPlayers()) {
+            int remainingPlayers = Setting.getNumberOfPlayers() - players.size();
+            notifyPlayers("Wait for other players to join, " + remainingPlayers + " players left.");
         }
-        catch (IOException exception) {
-            exception.printStackTrace();
-        }
+    }
+
+    /**
+     * send the given message to the players
+     * @param message given message
+     */
+    public void notifyPlayers(String message) {
+        for (Player player : players)
+            player.showMessage(new Message(message, this, player));
     }
 }

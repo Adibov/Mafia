@@ -21,4 +21,13 @@ abstract public class Person {
     public String getUsername() {
         return username;
     }
+
+    /**
+     * override toString method
+     * @return String result
+     */
+    @Override
+    public String toString() {
+        return username;
+    }
 }

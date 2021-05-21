@@ -1,4 +1,10 @@
 import java.time.LocalDate;
+import java.time.LocalTime;
+
+enum MESSAGETYPE {
+    ALL,
+    MAFIA
+}
 
 /**
  * Message class, represents messages between persons
@@ -6,7 +12,8 @@ import java.time.LocalDate;
 public class Message {
     final private String body;
     final private Person sender, receiver;
-    final private LocalDate time;
+    final private LocalTime time;
+    final private MESSAGETYPE messageType;
 
     /**
      * class constructor
@@ -18,7 +25,16 @@ public class Message {
         this.body = body;
         this.sender = sender;
         this.receiver = receiver;
-        time = LocalDate.now();
+        time = LocalTime.now();
+        messageType = MESSAGETYPE.ALL;
+    }
+
+    public Message(String body, Person sender, Person receiver, MESSAGETYPE messageType) {
+        this.body = body;
+        this.sender = sender;
+        this.receiver = receiver;
+        this.time = LocalTime.now();
+        this.messageType = messageType;
     }
 
     /**
@@ -49,7 +65,22 @@ public class Message {
      * time getter
      * @return time
      */
-    public LocalDate getTime() {
+    public LocalTime getTime() {
         return time;
+    }
+
+    /**
+     * messageType getter
+     * @return messageType
+     */
+    public MESSAGETYPE getMessageType() {
+        return messageType;
+    }
+
+    /**
+     * show message in the stdout
+     */
+    public void show() {
+        System.out.println("A message from " + sender + ":\n" + body);
     }
 }
