@@ -35,11 +35,8 @@ public class ClientHandler implements Runnable {
         try (ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream())) {
             socket.setSoTimeout(Setting.getSocketTimeOut());
             while (true) {
-                if (objectInputStream.available() > 0) {
-                    Message newMessage = (Message) objectInputStream.readObject();
-                    messages.add(newMessage);
-                    continue;
-                }
+                Message newMessage = (Message) objectInputStream.readObject();
+                messages.add(newMessage);
                 Thread.sleep(Setting.getServerRefreshTime());
             }
         }

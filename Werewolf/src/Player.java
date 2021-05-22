@@ -1,15 +1,21 @@
+import java.io.IOException;
+import java.net.Socket;
+
 /**
  * Player class, implements players behaviours. like waking, sleeping, voting, etc
  * @author Adibov
  * @version 1.0
  */
-abstract public class Player extends Person {
+public class Player extends Person {
+    private Client client;
+
     /**
      * class constructor
      * @param username player username
      */
     public Player(String username) {
         super(username);
+        client = new Client();
     }
 
     /**
@@ -17,6 +23,14 @@ abstract public class Player extends Person {
      * @param args program args
      */
     public static void main(String[] args) {
+        Player player = new Player("mammad");
+        player.joinGame();
+    }
+
+    /**
+     * join to the game
+     */
+    public void joinGame() {
 
     }
 
@@ -28,5 +42,17 @@ abstract public class Player extends Person {
         message.show();
     }
 
-
+    /**
+     * override equals method
+     * @param obj given object
+     * @return boolean result
+     */
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this)
+            return true;
+        if (!(obj instanceof Player))
+            return false;
+        return this.getUsername().equals(((Player) obj).getUsername());
+    }
 }

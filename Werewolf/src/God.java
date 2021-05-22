@@ -32,7 +32,11 @@ public class God extends Person {
         while (players.size() < Setting.getNumberOfPlayers()) {
             int remainingPlayers = Setting.getNumberOfPlayers() - players.size();
             notifyPlayers("Wait for other players to join, " + remainingPlayers + " players left.");
+            Player newPlayer = Server.newPlayer();
+            players.add(newPlayer);
+            alivePlayers.add(newPlayer);
         }
+        System.out.println("Tamam");
     }
 
     /**

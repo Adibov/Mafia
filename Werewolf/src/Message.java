@@ -1,9 +1,9 @@
 import java.time.LocalDate;
 import java.time.LocalTime;
 
-enum MESSAGETYPE {
-    ALL,
-    MAFIA
+enum DAYTIME {
+    DAY,
+    NIGHT
 }
 
 /**
@@ -11,9 +11,9 @@ enum MESSAGETYPE {
  */
 public class Message {
     final private String body;
-    final private Person sender, receiver;
+    final private Person sender;
     final private LocalTime time;
-    final private MESSAGETYPE messageType;
+    final private DAYTIME messageTime;
 
     /**
      * class constructor
@@ -24,17 +24,15 @@ public class Message {
     public Message(String body, Person sender, Person receiver) {
         this.body = body;
         this.sender = sender;
-        this.receiver = receiver;
         time = LocalTime.now();
-        messageType = MESSAGETYPE.ALL;
+        messageTime = DAYTIME.DAY;
     }
 
-    public Message(String body, Person sender, Person receiver, MESSAGETYPE messageType) {
+    public Message(String body, Person sender, Person receiver, DAYTIME daytime) {
         this.body = body;
         this.sender = sender;
-        this.receiver = receiver;
         this.time = LocalTime.now();
-        this.messageType = messageType;
+        this.messageTime = daytime;
     }
 
     /**
@@ -54,14 +52,6 @@ public class Message {
     }
 
     /**
-     * receiver getter
-     * @return receiver
-     */
-    public Person getReceiver() {
-        return receiver;
-    }
-
-    /**
      * time getter
      * @return time
      */
@@ -73,8 +63,8 @@ public class Message {
      * messageType getter
      * @return messageType
      */
-    public MESSAGETYPE getMessageType() {
-        return messageType;
+    public DAYTIME getMessageType() {
+        return messageTime;
     }
 
     /**

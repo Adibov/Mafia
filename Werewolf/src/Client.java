@@ -1,3 +1,4 @@
+import java.io.IOException;
 import java.net.Socket;
 
 /**
@@ -6,7 +7,18 @@ import java.net.Socket;
  * @version 1.0
  */
 public class Client {
-//    final private Socket socket;
+    private Socket socket;
 
-
+    /**
+     * class constructor
+     */
+    public Client() {
+        try {
+            socket = new Socket("127.0.0.1", 2021);
+        }
+        catch (IOException exception) {
+            exception.printStackTrace();
+            socket = null;
+        }
+    }
 }
