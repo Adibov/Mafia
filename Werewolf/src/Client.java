@@ -16,11 +16,13 @@ public class Client extends Thread {
 
     /**
      * class constructor
+     * @param player client's player
+     * @param port server port
      */
-    public Client(Player player) {
+    public Client(Player player, int port) throws IOException {
         this.player = player;
+        socket = new Socket("127.0.0.1", port);
         try {
-            socket = new Socket("127.0.0.1", 2021);
             objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
             objectInputStream = new ObjectInputStream(socket.getInputStream());
         }

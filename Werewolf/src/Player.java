@@ -52,7 +52,38 @@ public class Player extends Person {
      * connects player to the game
      */
     public void connectToGame() {
-        client = new Client(this); // connection to the server established
+        while (true) {
+            clearScreen();
+            System.out.println("Enter server port, you want to connect:");
+            int port = inputScanner.nextInt(); inputScanner.nextLine(); // drop
+            try {
+                client = new Client(this, port); // connection to the server established
+                clearScreen();
+                System.out.println("Connection established successfully.");
+                getCh();
+                break;
+            }
+            catch (IOException exception) {
+                clearScreen();
+                System.out.println("No such server with the entered port founded.");
+                getCh();
+            }
+        }
+    }
+
+    /**
+     * clear terminal screen for user
+     */
+    public void clearScreen() {
+        System.out.println("\n".repeat(Setting.getClearScreenBlankLines()));
+    }
+
+    /**
+     * waits for the user to press Enter
+     */
+    public void getCh() {
+        System.out.println("Press Enter to continue...");
+        inputScanner.nextLine();
     }
 
     /**

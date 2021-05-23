@@ -71,16 +71,19 @@ public class ClientHandler implements Runnable {
     }
 
     /**
-     * get message from the client, MAKE SURE TO RUN IT BEFORE THE run METHOD SO THEY DON'T INTERRUPT EACH OTHER
+     * wait until get a message from the client, MAKE SURE TO RUN IT BEFORE THE run METHOD SO THEY DON'T INTERRUPT EACH OTHER
      * @return received message
      */
     public Message getMessage() {
         Message receivedMessage = null;
-        try {
-            receivedMessage = (Message) objectInputStream.readObject();
-        }
-        catch (IOException | ClassNotFoundException exception) {
-//            exception.printStackTrace();
+        while (true) {
+            try {
+                receivedMessage = (Message) objectInputStream.readObject();
+                break;
+            }
+            catch (IOException | ClassNotFoundException exception) {
+    //            exception.printStackTrace();
+            }
         }
         return receivedMessage;
     }

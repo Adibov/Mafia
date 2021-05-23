@@ -11,6 +11,7 @@ public class Setting {
     final static private LocalTime votingTime = LocalTime.of(0, 0, 30);
     final static private int serverRefreshTime = 700; // in milliseconds
     final static private int socketTimeOut = 60 * 30; // in seconds
+    final static private int clearScreenBlankLines = 50;
 
     /**
      * numberOfPlayers getter
@@ -58,5 +59,13 @@ public class Setting {
      */
     public static int getSocketTimeOut() {
         return socketTimeOut;
+    }
+
+    /**
+     * clearScreenBlankLines getter
+     * @return clearScreenBlankLines
+     */
+    public static int getClearScreenBlankLines() {
+        return clearScreenBlankLines;
     }
 }
