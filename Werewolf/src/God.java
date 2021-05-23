@@ -33,12 +33,15 @@ public class God extends Person {
     public void waitForPlayersToJoin() {
         while (players.size() < Setting.getNumberOfPlayers()) {
             int remainingPlayers = Setting.getNumberOfPlayers() - players.size();
+            clearScreenForAll();
             notifyPlayers(new Message("Wait for other players to join, " + remainingPlayers + " players left.", this));
             Player newPlayer = Server.acceptNewPlayer(this);
             players.add(newPlayer);
             alivePlayers.add(newPlayer);
         }
-        System.out.println("Tamam");
+        clearScreenForAll();
+        notifyPlayers(new Message("All players have joined the game.", God.getGodObject()));
+        getChForAll();
     }
 
     /**
@@ -60,6 +63,26 @@ public class God extends Person {
             Server.sendMessage(message, player);
     }
 
+    /**
+     * call clearScreen method for all players
+     */
+    public void clearScreenForAll() {
+        for (Player player : players)
+            Server.clearScreen(player);
+    }
+
+    /**
+     * call getCh method for all players
+     */
+    public void getChForAll() {
+        for (Player player : players)
+            Server.getCh(player);
+    }
+
+    /**
+     * return god object
+     * @return god object
+     */
     public static Person getGodObject() {
         return god;
     }

@@ -11,6 +11,7 @@ public class ClientHandler implements Runnable {
     final private Socket socket;
     private ObjectOutputStream objectOutputStream;
     private ObjectInputStream objectInputStream;
+    private boolean isPaused;
 
     /**
      * class constructor
@@ -25,6 +26,7 @@ public class ClientHandler implements Runnable {
         catch (IOException exception) {
             exception.printStackTrace();
         }
+        isPaused = false;
     }
 
     /**
@@ -43,13 +45,15 @@ public class ClientHandler implements Runnable {
         try {
             socket.setSoTimeout(Setting.getSocketTimeOut());
             while (true) {
+                if (isPaused)
+                    continue;
                 Message newMessage = (Message) objectInputStream.readObject();
                 Server.addMessage(newMessage);
                 Thread.sleep(Setting.getServerRefreshTime());
             }
         }
         catch (IOException | ClassNotFoundException | InterruptedException exception) {
-            exception.printStackTrace();
+//            exception.printStackTrace();
         }
     }
 
@@ -76,8 +80,16 @@ public class ClientHandler implements Runnable {
             receivedMessage = (Message) objectInputStream.readObject();
         }
         catch (IOException | ClassNotFoundException exception) {
-            exception.printStackTrace();
+//            exception.printStackTrace();
         }
         return receivedMessage;
+    }
+
+    /**
+     * isPaused setter
+     * @param paused new value
+     */
+    public void setPaused(boolean paused) {
+        isPaused = paused;
     }
 }

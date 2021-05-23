@@ -23,6 +23,7 @@ public class Server {
     public static void runServer() {
         try {
             serverSocket = new ServerSocket(2021);
+            System.out.println("Server started successfully.");
         }
         catch (IOException exception) {
             exception.printStackTrace();
@@ -40,11 +41,14 @@ public class Server {
             ClientHandler newClientHandler = new ClientHandler(serverSocket.accept());
             String username = "";
             while (true) {
+                clearScreen(newClientHandler);
                 newClientHandler.sendMessage(new Message("Enter an username:", God.getGodObject()));
                 username = newClientHandler.getMessage().getBody();
                 if (god.isAvailableUsername(username))
                     break;
+                clearScreen(newClientHandler);
                 newClientHandler.sendMessage(new Message("This username has been taken.", God.getGodObject()));
+                getCh(newClientHandler);
             }
             newPlayer = new Player(username);
             playerHandlers.put(newPlayer, newClientHandler);
@@ -53,6 +57,9 @@ public class Server {
         catch (IOException exception) {
             exception.printStackTrace();
         }
+        clearScreen(newPlayer);
+        sendMessage(new Message("You have joined to the game.", God.getGodObject()), newPlayer);
+        getCh(newPlayer);
         return newPlayer;
     }
 
@@ -64,6 +71,48 @@ public class Server {
     public static void sendMessage(Message message, Player player) {
         ClientHandler clientHandler = playerHandlers.get(player);
         clientHandler.sendMessage(message);
+    }
+
+    /**
+     * clear terminal screen for the given player
+     * @param player given player
+     */
+    public static void clearScreen(Player player) {
+        sendMessage(new Message("\n".repeat(50), God.getGodObject()), player);
+    }
+
+    /**
+     * clear terminal screen for the given clientHandler
+     * @param clientHandler given clientHandler
+     */
+    private static void clearScreen(ClientHandler clientHandler) {
+        clientHandler.sendMessage(new Message("\n".repeat(50), God.getGodObject()));
+    }
+
+    /**
+     * wait for the client to press enter
+     * @param player client player
+     */
+    public static void getCh(Player player) {
+        ClientHandler clientHandler = playerHandlers.get(player);
+        getCh(clientHandler);
+    }
+
+    /**
+     * wait for the client to press enter
+     * @param clientHandler given clientHandler
+     */
+    private static void getCh(ClientHandler clientHandler) {
+        clientHandler.setPaused(false);
+        try {
+            Thread.sleep(Setting.getServerRefreshTime());
+        }
+        catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        clientHandler.sendMessage(new Message("Press enter to continue...", God.getGodObject()));
+        clientHandler.getMessage(); // drop
+        clientHandler.setPaused(true);
     }
 
     /**

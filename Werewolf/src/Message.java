@@ -72,6 +72,6 @@ public class Message implements Serializable {
      * show message in the stdout
      */
     public void show() {
-        System.out.println("A message from " + sender + ":\n" + body);
+        System.out.println(sender + ":\n" + body);
     }
 }

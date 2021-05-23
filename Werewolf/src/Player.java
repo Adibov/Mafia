@@ -53,7 +53,6 @@ public class Player extends Person {
      */
     public void connectToGame() {
         client = new Client(this); // connection to the server established
-        System.out.println("You have joined the game.");
     }
 
     /**
