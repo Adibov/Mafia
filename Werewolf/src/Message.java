@@ -1,3 +1,4 @@
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
@@ -9,7 +10,7 @@ enum DAYTIME {
 /**
  * Message class, represents messages between persons
  */
-public class Message {
+public class Message implements Serializable {
     final private String body;
     final private Person sender;
     final private LocalTime time;
@@ -21,14 +22,14 @@ public class Message {
      * @param sender message sender
      * @param receiver message receiver
      */
-    public Message(String body, Person sender, Person receiver) {
+    public Message(String body, Person sender) {
         this.body = body;
         this.sender = sender;
         time = LocalTime.now();
         messageTime = DAYTIME.DAY;
     }
 
-    public Message(String body, Person sender, Person receiver, DAYTIME daytime) {
+    public Message(String body, Person sender, DAYTIME daytime) {
         this.body = body;
         this.sender = sender;
         this.time = LocalTime.now();

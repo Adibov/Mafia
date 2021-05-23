@@ -1,5 +1,7 @@
 import java.io.IOException;
+import java.io.Serializable;
 import java.net.Socket;
+import java.util.Scanner;
 
 /**
  * Player class, implements players behaviours. like waking, sleeping, voting, etc
@@ -7,7 +9,15 @@ import java.net.Socket;
  * @version 1.0
  */
 public class Player extends Person {
-    private Client client;
+    private transient Client client;
+    final transient private Scanner inputScanner = new Scanner(System.in);
+
+    /**
+     * class constructor, for making a player with no username
+     */
+    public Player() {
+        super("");
+    }
 
     /**
      * class constructor
@@ -15,7 +25,6 @@ public class Player extends Person {
      */
     public Player(String username) {
         super(username);
-        client = new Client();
     }
 
     /**
@@ -23,7 +32,7 @@ public class Player extends Person {
      * @param args program args
      */
     public static void main(String[] args) {
-        Player player = new Player("mammad");
+        Player player = new Player();
         player.joinGame();
     }
 
@@ -31,7 +40,20 @@ public class Player extends Person {
      * join to the game
      */
     public void joinGame() {
+        connectToGame();
+        client.start();
+        while (true) {
+            String message = inputScanner.nextLine();
+            client.sendMessage(new Message(message, this));
+        }
+    }
 
+    /**
+     * connects player to the game
+     */
+    public void connectToGame() {
+        client = new Client(this); // connection to the server established
+        System.out.println("You have joined the game.");
     }
 
     /**

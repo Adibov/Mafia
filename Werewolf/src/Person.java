@@ -1,10 +1,12 @@
+import java.io.Serializable;
+
 /**
  * Person class, implements person behaviours
  * @author Adibov
  * @version 1.0
  */
-abstract public class Person {
-    final private String username;
+abstract public class Person implements Serializable {
+    final protected String username;
 
     /**
      * class constructor

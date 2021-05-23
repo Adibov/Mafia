@@ -9,7 +9,8 @@ import java.util.concurrent.ConcurrentLinkedDeque;
  */
 public class ClientHandler implements Runnable {
     final private Socket socket;
-    final private ConcurrentLinkedDeque<Message> messages = new ConcurrentLinkedDeque<>();
+    private ObjectOutputStream objectOutputStream;
+    private ObjectInputStream objectInputStream;
 
     /**
      * class constructor
@@ -17,6 +18,13 @@ public class ClientHandler implements Runnable {
      */
     public ClientHandler(Socket socket) {
         this.socket = socket;
+        try {
+            objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
+            objectInputStream = new ObjectInputStream(socket.getInputStream());
+        }
+        catch (IOException exception) {
+            exception.printStackTrace();
+        }
     }
 
     /**
@@ -32,11 +40,11 @@ public class ClientHandler implements Runnable {
      */
     @Override
     public void run() {
-        try (ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream())) {
+        try {
             socket.setSoTimeout(Setting.getSocketTimeOut());
             while (true) {
                 Message newMessage = (Message) objectInputStream.readObject();
-                messages.add(newMessage);
+                Server.addMessage(newMessage);
                 Thread.sleep(Setting.getServerRefreshTime());
             }
         }
@@ -46,38 +54,30 @@ public class ClientHandler implements Runnable {
     }
 
     /**
-     * get last unseen sent message
-     * @return result message
-     */
-    public Message getLastUnseenMessage() {
-        if (messages.size() == 0)
-            return null;
-        Message result = messages.getFirst();
-        messages.removeFirst();
-        return result;
-    }
-
-    /**
-     * return getLastUnseenMessage if not null, waits for an input otherwise
-     * @return result message
-     */
-    public Message getMessageFromClient() {
-        Message result = null;
-        while (result == null)
-            result = getLastUnseenMessage();
-        return result;
-    }
-
-    /**
      * send the given message via the socket
      * @param message given message
      */
     public void sendMessage(Message message) {
-        try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream())) {
+        try {
             objectOutputStream.writeObject(message);
         }
         catch (IOException exception) {
             exception.printStackTrace();
         }
+    }
+
+    /**
+     * get message from the client, MAKE SURE TO RUN IT BEFORE THE run METHOD SO THEY DON'T INTERRUPT EACH OTHER
+     * @return received message
+     */
+    public Message getMessage() {
+        Message receivedMessage = null;
+        try {
+            receivedMessage = (Message) objectInputStream.readObject();
+        }
+        catch (IOException | ClassNotFoundException exception) {
+            exception.printStackTrace();
+        }
+        return receivedMessage;
     }
 }

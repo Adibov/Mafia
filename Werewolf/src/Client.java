@@ -1,4 +1,6 @@
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
 
 /**
@@ -6,19 +8,62 @@ import java.net.Socket;
  * @author Adibov
  * @version 1.0
  */
-public class Client {
+public class Client extends Thread {
+    private Player player;
     private Socket socket;
+    private ObjectOutputStream objectOutputStream;
+    private ObjectInputStream objectInputStream;
 
     /**
      * class constructor
      */
-    public Client() {
+    public Client(Player player) {
+        this.player = player;
         try {
             socket = new Socket("127.0.0.1", 2021);
+            objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
+            objectInputStream = new ObjectInputStream(socket.getInputStream());
         }
         catch (IOException exception) {
             exception.printStackTrace();
             socket = null;
+        }
+    }
+
+    /**
+     * thread run method
+     */
+    public void run() {
+        runInputEngine();
+    }
+
+    /**
+     * always get input from the server and print it to the output
+     */
+    private void runInputEngine() {
+        Message newMessage;
+        while (true) {
+            try {
+                newMessage = (Message) objectInputStream.readObject();
+                player.showMessage(newMessage);
+                Thread.sleep(Setting.getServerRefreshTime());
+            }
+            catch (IOException | ClassNotFoundException | InterruptedException exception) {
+                exception.printStackTrace();
+            }
+        }
+    }
+
+    /**
+     * send the given message to the server
+     * @param message given message
+     */
+    public void sendMessage(Message message) {
+        try {
+            objectOutputStream.writeObject(message);
+        }
+        catch (IOException exception) {
+            exception.printStackTrace();
         }
     }
 }

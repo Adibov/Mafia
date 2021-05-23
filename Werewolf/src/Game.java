@@ -5,9 +5,18 @@
  */
 public class Game {
     private God god;
+    private DAYTIME daytime = DAYTIME.DAY;
 
     public void startNewGame() {
         god = new God();
         god.startNewGame();
+    }
+
+    /**
+     * dayTime setter
+     * @param daytime new dayTime value
+     */
+    public void setDaytime(DAYTIME daytime) {
+        this.daytime = daytime;
     }
 }

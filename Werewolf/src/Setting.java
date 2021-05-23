@@ -10,7 +10,7 @@ public class Setting {
     final static private LocalTime dayLength = LocalTime.of(0, 5, 0);
     final static private LocalTime votingTime = LocalTime.of(0, 0, 30);
     final static private int serverRefreshTime = 700; // in milliseconds
-    final static private int socketTimeOut = 60 * 15; // in seconds
+    final static private int socketTimeOut = 60 * 30; // in seconds
 
     /**
      * numberOfPlayers getter
