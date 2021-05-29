@@ -17,6 +17,7 @@ public class ClientHandler {
      * @param socket client socket
      */
     public ClientHandler(Socket socket) {
+        this.socket = socket;
         try {
             objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
             objectInputStream = new ObjectInputStream(socket.getInputStream());

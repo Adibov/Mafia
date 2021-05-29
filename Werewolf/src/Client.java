@@ -21,7 +21,7 @@ public class Client extends Thread {
      */
     public Client(Player player, int port) throws IOException {
         this.player = player;
-        socket = new Socket("127.0.0.1", port);
+        socket = new Socket("localhost", port);
         try {
             objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
             objectInputStream = new ObjectInputStream(socket.getInputStream());

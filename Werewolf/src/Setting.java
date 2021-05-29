@@ -5,7 +5,7 @@ import java.time.LocalTime;
  * Setting class, saves game settings
  */
 public class Setting {
-    final static private int numberOfPlayers = 10;
+    final static private int numberOfPlayers = 3;
     final static private int numberOfMafias = numberOfPlayers / 3;
     final static private LocalTime dayLength = LocalTime.of(0, 5, 0);
     final static private LocalTime votingTime = LocalTime.of(0, 0, 30);

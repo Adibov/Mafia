@@ -6,7 +6,7 @@ import java.net.Socket;
  * @author Adibov
  * @version 1.0
  */
-public class PlayerController implements Runnable {
+public class PlayerController {
     private Player player;
     private ClientHandler clientHandler;
     private GameController gameController;
@@ -26,28 +26,9 @@ public class PlayerController implements Runnable {
     }
 
     /**
-     * Override run method to make this class Runnable
-     */
-    @Override
-    public void run() {
-        if (player == null)
-            player = registerPlayer();
-        while (gameController.getDayNumber() == 0) {
-            try {
-                Thread.sleep(Setting.getServerRefreshTime());
-            }
-            catch (InterruptedException exception) {
-                exception.printStackTrace();
-            }
-        }
-
-    }
-
-    /**
      * register the client to the game and return the new player's object
-     * @return new player object
      */
-    public Player registerPlayer() {
+    public void registerPlayer() {
         String username = "";
         while (true) {
             clearScreen();
@@ -59,10 +40,10 @@ public class PlayerController implements Runnable {
             sendMessageFromGod("This username has been already taken.");
             getCh();
         }
+        player = new Player(username);
         clearScreen();
         sendMessageFromGod("You have successfully joined to the game.");
         getCh();
-        return new Player(username);
     }
 
     /**
@@ -76,7 +57,7 @@ public class PlayerController implements Runnable {
      * implement getCh method from C language. (waits until client press enter)
      */
     public void getCh() {
-        sendMessageFromGod("Press any key to continue...");
+        sendMessageFromGod("Press Enter key to continue...");
         getMessage(); // drop
     }
 
@@ -99,9 +80,11 @@ public class PlayerController implements Runnable {
      * @return entered message
      */
     public Message getMessage() {
-        if (clientHandler == null)
-            return null;
-        return clientHandler.getMessage();
+        synchronized(this) {
+            if (clientHandler == null)
+                return null;
+            return clientHandler.getMessage();
+        }
     }
 
     /**

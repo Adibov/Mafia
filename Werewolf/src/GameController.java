@@ -1,20 +1,18 @@
+import javax.swing.text.Style;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 /**
  * GameController class, controls the game, like accepting new players, sending messages to all players
  */
 public class GameController {
     final static private ExecutorService playerThreads = Executors.newCachedThreadPool();
-    private ArrayList<Player> players;
+    private CopyOnWriteArrayList<Player> players;
     private ServerSocket serverSocket;
     private HashMap<Player, PlayerController> playerControllers;
     private int dayNumber; // how many days have been passed
@@ -25,7 +23,7 @@ public class GameController {
      * class constructor
      */
     public GameController() {
-        players = new ArrayList<>();
+        players = new CopyOnWriteArrayList<>();
         playerControllers = new HashMap<>();
         dayNumber = 0;
         daytime = DAYTIME.DAY;
@@ -43,30 +41,56 @@ public class GameController {
     public void startGame() {
         if (dayNumber == 0)
             startPreparationDay();
-
+        if (dayNumber == 1)
+            startIntroductionDay();
     }
 
     /**
      * start preparation day. Get username from players and add them to the game
      */
     public void startPreparationDay() {
-        while (players.size() < Setting.getNumberOfPlayers()) {
-            int remainingPlayer = Setting.getNumberOfPlayers() - players.size();
-            clearAllScreens();
-            notifyAllPlayers("Waiting for other players to join, " + remainingPlayer + " players left.");
-            PlayerController newPlayerController = new PlayerController(this);
-            playerThreads.execute(newPlayerController);
+        startWaitingLobby();
+        dayNumber++;
+    }
 
-            Player newPlayer = null;
-            while (newPlayer == null)
-                newPlayer = newPlayerController.getPlayer();
-            players.add(newPlayer);
-            playerControllers.put(newPlayer, newPlayerController);
+    /**
+     * waits until all player join to the game
+     */
+    public void startWaitingLobby() {
+        while (players.size() < Setting.getNumberOfPlayers()) {
+            System.out.println("hey:" + players);
+            PlayerController newPlayerController = new PlayerController(this);
+            playerThreads.execute(() -> {
+                        Player newPlayer = null;
+                        newPlayerController.registerPlayer();
+                        while (newPlayer == null)
+                            newPlayer = newPlayerController.getPlayer();
+                        players.add(newPlayer);
+                        playerControllers.put(newPlayer, newPlayerController);
+                        clearAllScreens();
+                        int remainingPlayer = Setting.getNumberOfPlayers() - players.size();
+                        if (remainingPlayer > 0)
+                            notifyAllPlayers("Waiting for other players to join, " + remainingPlayer + " players left.");
+                    }
+            );
+            try {
+                //noinspection BusyWait
+                Thread.sleep(Setting.getServerRefreshTime());
+            }
+            catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
         clearAllScreens();
         notifyAllPlayers("All players have joined the game.");
         getChAllScreens();
-        dayNumber++;
+    }
+
+    /**
+     * start introduction day.
+     */
+    public void startIntroductionDay() {
+
     }
 
     /**
@@ -90,11 +114,19 @@ public class GameController {
     }
 
     /**
+     * call getCh method for the given player
+     * @param player given player
+     */
+    public void getCh(Player player) {
+        playerThreads.execute(() -> playerControllers.get(player).getCh());
+    }
+
+    /**
      * call getCh method for all players
      */
     public void getChAllScreens() {
         for (Player player : players)
-            playerControllers.get(player).getCh();
+            getCh(player);
     }
 
     /**
@@ -103,7 +135,7 @@ public class GameController {
      */
     public void notifyAllPlayers(String messageBody) {
         for (Player player : players)
-            playerControllers.get(player).sendMessageFromGod(messageBody);
+            playerThreads.execute(() -> playerControllers.get(player).sendMessageFromGod(messageBody));
     }
 
     /**
