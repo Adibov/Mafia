@@ -2,7 +2,7 @@ import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
-enum DAYTIME {
+enum DAYTIME implements Serializable {
     DAY,
     NIGHT
 }
@@ -20,7 +20,6 @@ public class Message implements Serializable {
      * class constructor
      * @param body message body
      * @param sender message sender
-     * @param receiver message receiver
      */
     public Message(String body, Person sender) {
         this.body = body;

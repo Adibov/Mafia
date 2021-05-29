@@ -2,6 +2,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
 /**
@@ -42,19 +43,22 @@ public class ClientHandler implements Runnable {
      */
     @Override
     public void run() {
-        try {
-            socket.setSoTimeout(Setting.getSocketTimeOut());
-            while (true) {
+        while (true) {
+            try {
                 if (isPaused)
                     continue;
                 Message newMessage = (Message) objectInputStream.readObject();
                 Server.addMessage(newMessage);
+                //noinspection BusyWait
                 Thread.sleep(Setting.getServerRefreshTime());
             }
-        }
-        catch (IOException | ClassNotFoundException | InterruptedException exception) {
+            catch (IOException | ClassNotFoundException | InterruptedException exception) {
 //            exception.printStackTrace();
+                if (socket.isClosed())
+                    break;
+            }
         }
+        Server.kickPlayer(this);
     }
 
     /**
@@ -78,7 +82,8 @@ public class ClientHandler implements Runnable {
         Message receivedMessage = null;
         while (true) {
             try {
-                receivedMessage = (Message) objectInputStream.readObject();
+                Object receivedObject = objectInputStream.readObject();
+                receivedMessage = (Message) receivedObject;
                 break;
             }
             catch (IOException | ClassNotFoundException exception) {
@@ -94,5 +99,26 @@ public class ClientHandler implements Runnable {
      */
     public void setPaused(boolean paused) {
         isPaused = paused;
+    }
+
+    /**
+     * override equals method
+     * @param o given object
+     * @return boolean result
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof ClientHandler that)) return false;
+        return Objects.equals(socket, that.socket);
+    }
+
+    /**
+     * override hashCode method
+     * @return hash result
+     */
+    @Override
+    public int hashCode() {
+        return Objects.hash(socket);
     }
 }

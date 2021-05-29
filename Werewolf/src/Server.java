@@ -94,6 +94,8 @@ public class Server {
      * @param player client player
      */
     public static void getCh(Player player) {
+        if (!playerHandlers.containsKey(player))
+            return;
         ClientHandler clientHandler = playerHandlers.get(player);
         getCh(clientHandler);
     }
@@ -103,7 +105,7 @@ public class Server {
      * @param clientHandler given clientHandler
      */
     private static void getCh(ClientHandler clientHandler) {
-        clientHandler.setPaused(false);
+        clientHandler.setPaused(true);
         try {
             Thread.sleep(Setting.getServerRefreshTime());
         }
@@ -112,7 +114,23 @@ public class Server {
         }
         clientHandler.sendMessage(new Message("Press enter to continue...", God.getGodObject()));
         clientHandler.getMessage(); // drop
-        clientHandler.setPaused(true);
+        clientHandler.setPaused(false);
+    }
+
+    /**
+     * kick player with the given clientHandler
+     * @param clientHandler given clientHandler
+     */
+    public static void kickPlayer(ClientHandler clientHandler) {
+        Player kickedPlayer = null;
+        for (Player player : playerHandlers.keySet())
+            if (playerHandlers.get(player).equals(clientHandler))
+                kickedPlayer = player;
+        if (kickedPlayer == null)
+            return;
+
+        God.getGodObject().kickPlayer(kickedPlayer);
+        playerHandlers.remove(kickedPlayer);
     }
 
     /**

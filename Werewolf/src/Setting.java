@@ -6,7 +6,7 @@ import java.time.LocalTime;
  */
 public class Setting {
     final static private int numberOfPlayers = 10;
-    final static private int numberOfMafias = 3;
+    final static private int numberOfMafias = numberOfPlayers / 3;
     final static private LocalTime dayLength = LocalTime.of(0, 5, 0);
     final static private LocalTime votingTime = LocalTime.of(0, 0, 30);
     final static private int serverRefreshTime = 700; // in milliseconds

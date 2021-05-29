@@ -10,13 +10,14 @@ import java.util.ArrayList;
 public class God extends Person {
     final transient private ArrayList<Player> players = new ArrayList<Player>();
     final transient private ArrayList<Player> alivePlayers = new ArrayList<Player>();
-    final transient private static God god = new God();
+    transient private static God god;
 
     /**
      * class constructor
      */
     public God() {
         super("God");
+        god = this;
     }
 
     /**
@@ -45,6 +46,15 @@ public class God extends Person {
     }
 
     /**
+     * kick the given player from game
+     * @param player given player
+     */
+    public void kickPlayer(Player player) {
+        if (alivePlayers.contains(player))
+            alivePlayers.remove(player);
+    }
+
+    /**
      * check if the given username hasn't been taken
      * @param username new username
      * @return boolean result
@@ -59,7 +69,7 @@ public class God extends Person {
      * @param message given message
      */
     public void notifyPlayers(Message message) {
-        for (Player player : players)
+        for (Player player : alivePlayers)
             Server.sendMessage(message, player);
     }
 
@@ -83,7 +93,7 @@ public class God extends Person {
      * return god object
      * @return god object
      */
-    public static Person getGodObject() {
+    public static God getGodObject() {
         return god;
     }
 }
