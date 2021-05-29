@@ -11,12 +11,14 @@ import java.util.Scanner;
 public class Player extends Person {
     private transient Client client;
     final transient private Scanner inputScanner = new Scanner(System.in);
+    private boolean isAlive;
 
     /**
      * class constructor, for making a player with no username
      */
     public Player() {
         super("");
+        isAlive = true;
     }
 
     /**
@@ -25,6 +27,7 @@ public class Player extends Person {
      */
     public Player(String username) {
         super(username);
+        isAlive = true;
     }
 
     /**
@@ -92,6 +95,22 @@ public class Player extends Person {
      */
     public void showMessage(Message message) {
         message.show();
+    }
+
+    /**
+     * isAlive getter
+     * @return isAlive
+     */
+    public boolean isAlive() {
+        return isAlive;
+    }
+
+    /**
+     * isAlive setter
+     * @param alive isAlive new value
+     */
+    public void setAlive(boolean alive) {
+        isAlive = alive;
     }
 
     /**

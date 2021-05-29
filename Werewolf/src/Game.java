@@ -1,22 +1,23 @@
 /**
- * Game class, manages games. like starting a new game, save a game, load a game, etc ...
+ * Game class saves game state and handle saving/loading the game.
  * @author Adibov
  * @version 1.0
  */
 public class Game {
-    private God god;
-    private DAYTIME daytime = DAYTIME.DAY;
+    private GameController gameController;
 
-    public void startNewGame() {
-        god = new God();
-        god.startNewGame();
+    /**
+     * class constructor
+     */
+    public Game() {
+
     }
 
     /**
-     * dayTime setter
-     * @param daytime new dayTime value
+     * start a new game
      */
-    public void setDaytime(DAYTIME daytime) {
-        this.daytime = daytime;
+    public void startNewGame() {
+        gameController = new GameController();
+        gameController.startGame();
     }
 }
