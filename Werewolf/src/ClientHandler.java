@@ -14,10 +14,10 @@ public class ClientHandler {
 
     /**
      * class constructor
+     * @param socket client socket
      */
-    public ClientHandler() {
+    public ClientHandler(Socket socket) {
         try {
-            socket = new Socket("127.0.0.1", 2021);
             objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
             objectInputStream = new ObjectInputStream(socket.getInputStream());
         }

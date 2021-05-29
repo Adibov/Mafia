@@ -1,3 +1,6 @@
+import java.io.IOException;
+import java.net.Socket;
+
 /**
  * PlayerController class manages players action. Each player has his own PlayerController
  * @author Adibov
@@ -14,7 +17,12 @@ public class PlayerController implements Runnable {
      */
     public PlayerController(GameController gameController) {
         this.gameController = gameController;
-        clientHandler = new ClientHandler(); // connection to the client established
+        try {
+            clientHandler = new ClientHandler(gameController.getServerSocket().accept()); // connection to the client established
+        }
+        catch (IOException exception) {
+            exception.printStackTrace();
+        }
     }
 
     /**
@@ -24,6 +32,15 @@ public class PlayerController implements Runnable {
     public void run() {
         if (player == null)
             player = registerPlayer();
+        while (gameController.getDayNumber() == 0) {
+            try {
+                Thread.sleep(Setting.getServerRefreshTime());
+            }
+            catch (InterruptedException exception) {
+                exception.printStackTrace();
+            }
+        }
+
     }
 
     /**
@@ -63,8 +80,8 @@ public class PlayerController implements Runnable {
         getMessage(); // drop
     }
 
-    public void sendMessageFromGod(String body) {
-        sendMessage(new Message(body, God.getInstance()));
+    public void sendMessageFromGod(String messageBody) {
+        sendMessage(new Message(messageBody, God.getInstance()));
     }
 
     /**
