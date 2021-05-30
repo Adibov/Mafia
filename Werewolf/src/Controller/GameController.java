@@ -1,23 +1,23 @@
 package Controller;
 
-import javax.swing.text.Style;
+import Roles.*;
+
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Random;
-import java.util.Set;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * GameController class, controls the game, like accepting new players, sending messages to all players
+ * @author Adibov
+ * @version 1.0
  */
 public class GameController {
     final static private ExecutorService playerThreads = Executors.newCachedThreadPool();
     private CopyOnWriteArrayList<Player> players;
     private ServerSocket serverSocket;
-    private HashMap<Player, PlayerController> playerControllers;
+    private ConcurrentHashMap<Player, PlayerController> playerControllers;
     private int dayNumber; // how many days have been passed
     private DAYTIME daytime;
 
@@ -27,7 +27,7 @@ public class GameController {
      */
     public GameController() {
         players = new CopyOnWriteArrayList<>();
-        playerControllers = new HashMap<>();
+        playerControllers = new ConcurrentHashMap<>();
         dayNumber = 0;
         daytime = DAYTIME.DAY;
         try {
@@ -61,23 +61,26 @@ public class GameController {
      * waits until all player join to the game
      */
     public void startWaitingLobby() {
-        while (players.size() < Setting.getNumberOfPlayers()) {
-            System.out.println("hey:" + players);
+        int whileLoopCount = 0;
+        AtomicInteger numberOfPlayers = new AtomicInteger(0); // define Atomic to make it usable in the following lambda function
+        while (whileLoopCount < Setting.getNumberOfPlayers()) {
             PlayerController newPlayerController = new PlayerController(this);
             playerThreads.execute(() -> {
-                        Player newPlayer = null;
-                        newPlayerController.registerPlayer();
-                        //noinspection IdempotentLoopBody
-                        while (newPlayer == null)
-                            newPlayer = newPlayerController.getPlayer();
-                        players.add(newPlayer);
-                        playerControllers.put(newPlayer, newPlayerController);
-                        clearAllScreens();
-                        int remainingPlayer = Setting.getNumberOfPlayers() - players.size();
-                        if (remainingPlayer > 0)
-                            notifyAllPlayers("Waiting for other players to join, " + remainingPlayer + " players left.");
-                    }
-            );
+                newPlayerController.registerPlayer();
+                Player newPlayer = null;
+                //noinspection IdempotentLoopBody
+                while (newPlayer == null)
+                    newPlayer = newPlayerController.getPlayer();
+                players.add(newPlayer);
+                playerControllers.put(newPlayer, newPlayerController);
+                clearAllScreens();
+
+                numberOfPlayers.incrementAndGet();
+                int remainingPlayer = Setting.getNumberOfPlayers() - numberOfPlayers.get();
+                if (remainingPlayer > 0) {
+                    notifyAllPlayers("Waiting for other players to join, " + remainingPlayer + " player(s) left.");
+                }
+            });
             try {
                 //noinspection BusyWait
                 Thread.sleep(Setting.getServerRefreshTime());
@@ -85,31 +88,85 @@ public class GameController {
             catch (InterruptedException e) {
                 e.printStackTrace();
             }
+            whileLoopCount++;
+        }
+        while (players.size() < Setting.getNumberOfPlayers()) { // waits until all players have joined to the game
+            try {
+                //noinspection BusyWait
+                Thread.sleep(Setting.getServerRefreshTime());
+            }
+            catch (InterruptedException exception) {
+                exception.printStackTrace();
+            }
         }
         clearAllScreens();
         notifyAllPlayers("All players have joined the game.");
         getChAllScreens();
+        System.out.println("All players have joined the game.");
     }
 
     /**
      * distribute roles randomly
      */
     public void distributeRoles() {
+        System.out.println("Starting to distribute roles.");
         clearAllScreens();
         notifyAllPlayers("God is distributing roles, please wait...");
         randomShuffle(players);
-        for (int i = 0; i < Setting.getNumberOfMafias(); i++) {
+
+        final int numberOfMafias = Setting.getNumberOfMafias();
+        for (int i = 0; i < numberOfMafias; i++) {
             Player player = players.get(i);
+            clearPlayerScreen(player);
+            //noinspection EnhancedSwitchMigration
             switch (i) {
                 case 0:
+                    player = new GodFather(player);
+                    sendTextAndGetCh("You are God Father of the game.", player);
                     break;
                 case 1:
+                    player = new DoctorLecter(player);
+                    sendTextAndGetCh("You are Doctor Lecter of the game.", player);
                     break;
                 default:
-                    ;
+                    player = new Mafia(player);
+                    sendTextAndGetCh("You are Mafia of the game.", player);
             }
         }
-
+        for (int i = numberOfMafias; i < players.size(); i++) {
+            int citizenIndex = numberOfMafias - i;
+            Player player = players.get(i);
+            clearPlayerScreen(player);
+            switch (citizenIndex) {
+                case 0:
+                    player = new Doctor(player);
+                    sendTextAndGetCh("You are Doctor of the game.", player);
+                    break;
+                case 1:
+                    player = new Detector(player);
+                    sendTextAndGetCh("You are Detector of the game.", player);
+                    break;
+                case 2:
+                    player = new Sniper(player);
+                    sendTextAndGetCh("You are Sniper of the game.", player);
+                    break;
+                case 3:
+                    player = new Mayor(player);
+                    sendTextAndGetCh("You are Mayor of the game.", player);
+                    break;
+                case 4:
+                    player = new Psychologist(player);
+                    sendTextAndGetCh("You are Psychologist of the game.", player);
+                    break;
+                case 5:
+                    player = new DieHard(player);
+                    sendTextAndGetCh("You are Die Hard of the game.", player);
+                    break;
+                default:
+                    player = new Citizen(player);
+                    sendTextAndGetCh("You are Citizen of the game.", player);
+            }
+        }
     }
 
     /**
@@ -146,11 +203,19 @@ public class GameController {
     }
 
     /**
+     * clear screen of the given player
+     * @param player given player
+     */
+    public void clearPlayerScreen(Player player) {
+        playerThreads.execute(() -> playerControllers.get(player).clearScreen());
+    }
+
+    /**
      * clear screen for all players
      */
     public void clearAllScreens() {
         for (Player player : players)
-            playerControllers.get(player).clearScreen();
+            clearPlayerScreen(player);
     }
 
     /**
@@ -170,12 +235,44 @@ public class GameController {
     }
 
     /**
+     * send the given message to the corresponding player
+     * @param message given message
+     * @param player receiver player
+     */
+    public void sendMessageToPlayer(Message message, Player player) {
+        playerThreads.execute(() -> playerControllers.get(player).sendMessage(message));
+    }
+
+    /**
+     * send the given text to the corresponding player
+     * @param messageBody message body
+     * @param player receiver player
+     */
+    public void sendTextToPlayer(String messageBody, Player player) {
+        sendMessageToPlayer(new Message(messageBody, God.getInstance()), player);
+    }
+
+    /**
+     * send the given text to the corresponding player and call getCh method for the same player
+     * @param messageBody given text
+     * @param player corresponding player
+     */
+    public void sendTextAndGetCh(String messageBody, Player player) {
+        PlayerController playerController = playerControllers.get(player);
+        System.out.println("Player text: " + player + " , " + players + " , " + playerController + " , " + player.equals(players.get(0)));
+        playerThreads.execute(() -> {
+            playerController.sendMessageFromGod(messageBody);
+            playerController.getCh();
+        });
+    }
+
+    /**
      * send the given message to all players in the game
      * @param messageBody given message's body
      */
     public void notifyAllPlayers(String messageBody) {
         for (Player player : players)
-            playerThreads.execute(() -> playerControllers.get(player).sendMessageFromGod(messageBody));
+            sendTextToPlayer(messageBody, player);
     }
 
     /**

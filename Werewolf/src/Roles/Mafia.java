@@ -8,9 +8,9 @@ import Controller.Player;
 public class Mafia extends Player {
     /**
      * class constructor
-     * @param username player username
+     * @param player player
      */
-    public Mafia(String username) {
-        super(username);
+    public Mafia(Player player) {
+        super(player.getUsername());
     }
 }

@@ -2,6 +2,7 @@ package Controller;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.util.Objects;
 
 /**
  * PlayerController class manages players action. Each player has his own PlayerController
@@ -95,5 +96,18 @@ public class PlayerController {
      */
     public Player getPlayer() {
         return player;
+    }
+
+    /**
+     * override equals method
+     * @param o given object
+     * @return boolean result
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof PlayerController)) return false;
+        PlayerController that = (PlayerController) o;
+        return player.equals(that.getPlayer());
     }
 }
