@@ -1,3 +1,7 @@
+package Roles;
+
+import Controller.Player;
+
 /**
  * Mafia class, handles mafia players in the game
  */

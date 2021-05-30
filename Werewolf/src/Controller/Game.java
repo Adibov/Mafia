@@ -1,3 +1,5 @@
+package Controller;
+
 /**
  * Game class saves game state and handle saving/loading the game.
  * @author Adibov

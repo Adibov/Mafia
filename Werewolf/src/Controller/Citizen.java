@@ -1,3 +1,5 @@
+package Controller;
+
 /**
  * Citizen class, handles citizen player in the game
  */

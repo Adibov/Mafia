@@ -1,3 +1,5 @@
+package Controller;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -31,11 +33,10 @@ public class ClientHandler {
      * send the given message via the socket
      * @param message given message
      */
-    public void sendMessage(Message message) {
+    public synchronized void sendMessage (Message message){
         try {
             objectOutputStream.writeObject(message);
-        }
-        catch (IOException exception) {
+        } catch (IOException exception) {
             exception.printStackTrace();
         }
     }
@@ -44,7 +45,7 @@ public class ClientHandler {
      * wait until get a message from the client
      * @return received message
      */
-    public Message getMessage() {
+    public synchronized Message getMessage() {
         Message receivedMessage = null;
         while (true) {
             try {

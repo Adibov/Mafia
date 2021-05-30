@@ -1,3 +1,5 @@
+package Controller;
+
 /**
  * Main class to start the project and testing
  * @author Adibov

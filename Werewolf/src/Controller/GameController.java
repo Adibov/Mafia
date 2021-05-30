@@ -1,9 +1,12 @@
+package Controller;
+
 import javax.swing.text.Style;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.*;
 
@@ -50,6 +53,7 @@ public class GameController {
      */
     public void startPreparationDay() {
         startWaitingLobby();
+        distributeRoles();
         dayNumber++;
     }
 
@@ -63,6 +67,7 @@ public class GameController {
             playerThreads.execute(() -> {
                         Player newPlayer = null;
                         newPlayerController.registerPlayer();
+                        //noinspection IdempotentLoopBody
                         while (newPlayer == null)
                             newPlayer = newPlayerController.getPlayer();
                         players.add(newPlayer);
@@ -84,6 +89,41 @@ public class GameController {
         clearAllScreens();
         notifyAllPlayers("All players have joined the game.");
         getChAllScreens();
+    }
+
+    /**
+     * distribute roles randomly
+     */
+    public void distributeRoles() {
+        clearAllScreens();
+        notifyAllPlayers("God is distributing roles, please wait...");
+        randomShuffle(players);
+        for (int i = 0; i < Setting.getNumberOfMafias(); i++) {
+            Player player = players.get(i);
+            switch (i) {
+                case 0:
+                    break;
+                case 1:
+                    break;
+                default:
+                    ;
+            }
+        }
+
+    }
+
+    /**
+     * shuffle the given list randomly
+     * @param list given list
+     */
+    private void randomShuffle(CopyOnWriteArrayList<Player> list) {
+        Random random = new Random();
+        for (int i = 1; i < list.size(); i++) {
+            int indx = random.nextInt(i + 1);
+            Player tmp = list.get(indx);
+            list.set(indx, list.get(i));
+            list.set(i, tmp);
+        }
     }
 
     /**
