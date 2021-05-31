@@ -71,13 +71,14 @@ public class GameController {
                 //noinspection IdempotentLoopBody
                 while (newPlayer == null)
                     newPlayer = newPlayerController.getPlayer();
+                newPlayerController.setPlayer(newPlayer);
                 players.add(newPlayer);
                 playerControllers.put(newPlayer, newPlayerController);
-                clearAllScreens();
 
                 numberOfPlayers.incrementAndGet();
                 int remainingPlayer = Setting.getNumberOfPlayers() - numberOfPlayers.get();
                 if (remainingPlayer > 0) {
+                    clearAllScreens();
                     notifyAllPlayers("Waiting for other players to join, " + remainingPlayer + " player(s) left.");
                 }
             });
@@ -208,6 +209,12 @@ public class GameController {
      */
     public void clearPlayerScreen(Player player) {
         playerThreads.execute(() -> playerControllers.get(player).clearScreen());
+        try {
+            Thread.sleep(Setting.getServerRefreshTime());
+        }
+        catch (InterruptedException exception) {
+            exception.printStackTrace();
+        }
     }
 
     /**
@@ -216,6 +223,12 @@ public class GameController {
     public void clearAllScreens() {
         for (Player player : players)
             clearPlayerScreen(player);
+        try {
+            Thread.sleep(Setting.getServerRefreshTime());
+        }
+        catch (InterruptedException exception) {
+            exception.printStackTrace();
+        }
     }
 
     /**
@@ -223,7 +236,10 @@ public class GameController {
      * @param player given player
      */
     public void getCh(Player player) {
-        playerThreads.execute(() -> playerControllers.get(player).getCh());
+        PlayerController playerController = playerControllers.get(player);
+        if (playerController == null)
+            return;
+        playerThreads.execute(() -> playerController.getCh());
     }
 
     /**
@@ -240,7 +256,10 @@ public class GameController {
      * @param player receiver player
      */
     public void sendMessageToPlayer(Message message, Player player) {
-        playerThreads.execute(() -> playerControllers.get(player).sendMessage(message));
+        PlayerController playerController = playerControllers.get(player);
+        if (playerController == null)
+            return;
+        playerThreads.execute(() -> playerController.sendMessage(message));
     }
 
     /**
@@ -259,7 +278,8 @@ public class GameController {
      */
     public void sendTextAndGetCh(String messageBody, Player player) {
         PlayerController playerController = playerControllers.get(player);
-        System.out.println("Player text: " + player + " , " + players + " , " + playerController + " , " + player.equals(players.get(0)));
+        if (playerController == null)
+            return;
         playerThreads.execute(() -> {
             playerController.sendMessageFromGod(messageBody);
             playerController.getCh();
@@ -273,6 +293,12 @@ public class GameController {
     public void notifyAllPlayers(String messageBody) {
         for (Player player : players)
             sendTextToPlayer(messageBody, player);
+        try {
+            Thread.sleep(Setting.getServerRefreshTime());
+        }
+        catch (InterruptedException exception) {
+            exception.printStackTrace();
+        }
     }
 
     /**

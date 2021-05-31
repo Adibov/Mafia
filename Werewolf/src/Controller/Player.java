@@ -3,6 +3,7 @@ package Controller;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.Socket;
+import java.util.Objects;
 import java.util.Scanner;
 
 /**
@@ -127,5 +128,14 @@ public class Player extends Person {
         if (!(obj instanceof Player))
             return false;
         return this.getUsername().equals(((Player) obj).getUsername());
+    }
+
+    /**
+     * override hashCode method
+     * @return hash result
+     */
+    @Override
+    public int hashCode() {
+        return username.hashCode();
     }
 }

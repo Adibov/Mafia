@@ -99,6 +99,14 @@ public class PlayerController {
     }
 
     /**
+     * player setter
+     * @param player new player value
+     */
+    public void setPlayer(Player player) {
+        this.player = player;
+    }
+
+    /**
      * override equals method
      * @param o given object
      * @return boolean result
