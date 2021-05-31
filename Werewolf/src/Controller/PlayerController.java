@@ -35,59 +35,91 @@ public class PlayerController {
         String username = "";
         while (true) {
             clearScreen();
-            sendMessageFromGod("Enter an username:");
+            sendMessage("Enter an username:");
             username = getMessage().getBody();
             if (gameController.isUsernameAvailable(username))
                 break;
             clearScreen();
-            sendMessageFromGod("This username has been already taken.");
+            sendMessage("This username has been already taken.");
             getCh();
         }
         player = new Player(username);
         clearScreen();
-        sendMessageFromGod("You have successfully joined to the game.");
+        sendMessage("You have successfully joined to the game.");
         getCh();
     }
 
     /**
      * clear screen for the player
      */
-    public void clearScreen() {
-        sendMessageFromGod("\n".repeat(50));
+    private void clearScreen() {
+        sendMessage("\n".repeat(50));
     }
 
     /**
      * implement getCh method from C language. (waits until client press enter)
      */
-    public void getCh() {
-        sendMessageFromGod("Press Enter key to continue...");
+    private void getCh() {
+        sendMessage("Press Enter key to continue...");
         getMessage(); // drop
-    }
-
-    public void sendMessageFromGod(String messageBody) {
-        sendMessage(new Message(messageBody, God.getInstance()));
     }
 
     /**
      * send the given message to the client
      * @param message given message
      */
-    public void sendMessage(Message message) {
+    private void sendMessage(Message message) {
         if (clientHandler == null)
             return;
         clientHandler.sendMessage(message);
     }
 
     /**
+     * send the given text to player
+     * @param messageBody given text
+     */
+    private void sendMessage(String messageBody) {
+        sendMessage(new Message(messageBody, God.getInstance()));
+    }
+
+    /**
      * waits for the client to enter a message
      * @return entered message
      */
-    public Message getMessage() {
+    public synchronized Message getMessage() {
         synchronized(this) {
             if (clientHandler == null)
                 return null;
             return clientHandler.getMessage();
         }
+    }
+
+    /**
+     * send the given message and run remaining methods
+     * @param message given message
+     * @param callClearScreen call clearScreen before sending
+     * @param callGetCh call getCh method after sending
+     */
+    public synchronized void sendCustomMessage(Message message, boolean callClearScreen, boolean callGetCh) {
+        if (callClearScreen)
+            clearScreen();
+        sendMessage(message);
+        if (callGetCh)
+            getCh();
+    }
+
+    /**
+     * send the given text and run remaining methods
+     * @param bodyMessage given text
+     * @param callClearScreen call clearScreen before sending
+     * @param callGetCh call getCh method after sending
+     */
+    public void sendCustomMessage(String bodyMessage, boolean callClearScreen, boolean callGetCh) {
+        if (callClearScreen)
+            clearScreen();
+        sendMessage(bodyMessage);
+        if (callGetCh)
+            getCh();
     }
 
     /**

@@ -77,10 +77,8 @@ public class GameController {
 
                 numberOfPlayers.incrementAndGet();
                 int remainingPlayer = Setting.getNumberOfPlayers() - numberOfPlayers.get();
-                if (remainingPlayer > 0) {
-                    clearAllScreens();
-                    notifyAllPlayers("Waiting for other players to join, " + remainingPlayer + " player(s) left.");
-                }
+                if (remainingPlayer > 0)
+                    sendCustomMessageToAll("Waiting for other players to join, " + remainingPlayer + " player(s) left.", true, false);
             });
             try {
                 //noinspection BusyWait
@@ -100,10 +98,9 @@ public class GameController {
                 exception.printStackTrace();
             }
         }
-        clearAllScreens();
-        notifyAllPlayers("All players have joined the game.");
-        getChAllScreens();
+        sendCustomMessageToAll("All players have joined the game.", true, true);
         System.out.println("All players have joined the game.");
+        sleep();
     }
 
     /**
@@ -111,61 +108,58 @@ public class GameController {
      */
     public void distributeRoles() {
         System.out.println("Starting to distribute roles.");
-        clearAllScreens();
-        notifyAllPlayers("God is distributing roles, please wait...");
+        sendCustomMessageToAll("God is distributing roles, please wait...", true, true);
         randomShuffle(players);
 
         final int numberOfMafias = Setting.getNumberOfMafias();
         for (int i = 0; i < numberOfMafias; i++) {
             Player player = players.get(i);
-            clearPlayerScreen(player);
             //noinspection EnhancedSwitchMigration
             switch (i) {
                 case 0:
                     player = new GodFather(player);
-                    sendTextAndGetCh("You are God Father of the game.", player);
+                    sendCustomMessageToPlayer("You are God Father of the game.", player, true, true);
                     break;
                 case 1:
                     player = new DoctorLecter(player);
-                    sendTextAndGetCh("You are Doctor Lecter of the game.", player);
+                    sendCustomMessageToPlayer("You are Doctor Lecter of the game.", player, true, true);
                     break;
                 default:
                     player = new Mafia(player);
-                    sendTextAndGetCh("You are Mafia of the game.", player);
+                    sendCustomMessageToPlayer("You are Mafia of the game.", player, true, true);
             }
         }
         for (int i = numberOfMafias; i < players.size(); i++) {
             int citizenIndex = numberOfMafias - i;
             Player player = players.get(i);
-            clearPlayerScreen(player);
             switch (citizenIndex) {
                 case 0:
                     player = new Doctor(player);
-                    sendTextAndGetCh("You are Doctor of the game.", player);
+                    sendCustomMessageToPlayer("You are Doctor of the game.", player, true, true);
                     break;
                 case 1:
                     player = new Detector(player);
-                    sendTextAndGetCh("You are Detector of the game.", player);
+                    sendCustomMessageToPlayer("You are Detector of the game.", player, true, true);
                     break;
                 case 2:
                     player = new Sniper(player);
-                    sendTextAndGetCh("You are Sniper of the game.", player);
+                    sendCustomMessageToPlayer("You are Sniper of the game.", player, true, true);
                     break;
                 case 3:
                     player = new Mayor(player);
-                    sendTextAndGetCh("You are Mayor of the game.", player);
+                    sendCustomMessageToPlayer("You are Mayor of the game.", player, true, true);
                     break;
                 case 4:
                     player = new Psychologist(player);
-                    sendTextAndGetCh("You are Psychologist of the game.", player);
+                    sendCustomMessageToPlayer("You are Psychologist of the game.", player, true, true);
                     break;
                 case 5:
                     player = new DieHard(player);
-                    sendTextAndGetCh("You are Die Hard of the game.", player);
+                    sendCustomMessageToPlayer("You are Die Hard of the game.", player, true, true);
                     break;
                 default:
                     player = new Citizen(player);
-                    sendTextAndGetCh("You are Citizen of the game.", player);
+                    sendCustomMessageToPlayer("You are Citizen of the game.", player, true, true);
             }
         }
     }
@@ -177,9 +171,9 @@ public class GameController {
     private void randomShuffle(CopyOnWriteArrayList<Player> list) {
         Random random = new Random();
         for (int i = 1; i < list.size(); i++) {
-            int indx = random.nextInt(i + 1);
-            Player tmp = list.get(indx);
-            list.set(indx, list.get(i));
+            int index = random.nextInt(i + 1);
+            Player tmp = list.get(index);
+            list.set(index, list.get(i));
             list.set(i, tmp);
         }
     }
@@ -204,95 +198,71 @@ public class GameController {
     }
 
     /**
-     * clear screen of the given player
-     * @param player given player
-     */
-    public void clearPlayerScreen(Player player) {
-        playerThreads.execute(() -> playerControllers.get(player).clearScreen());
-        try {
-            Thread.sleep(Setting.getServerRefreshTime());
-        }
-        catch (InterruptedException exception) {
-            exception.printStackTrace();
-        }
-    }
-
-    /**
-     * clear screen for all players
-     */
-    public void clearAllScreens() {
-        for (Player player : players)
-            clearPlayerScreen(player);
-        try {
-            Thread.sleep(Setting.getServerRefreshTime());
-        }
-        catch (InterruptedException exception) {
-            exception.printStackTrace();
-        }
-    }
-
-    /**
-     * call getCh method for the given player
-     * @param player given player
-     */
-    public void getCh(Player player) {
-        PlayerController playerController = playerControllers.get(player);
-        if (playerController == null)
-            return;
-        playerThreads.execute(() -> playerController.getCh());
-    }
-
-    /**
-     * call getCh method for all players
-     */
-    public void getChAllScreens() {
-        for (Player player : players)
-            getCh(player);
-    }
-
-    /**
-     * send the given message to the corresponding player
+     * send the given message to the corresponding player and call remaining methods
      * @param message given message
      * @param player receiver player
+     * @param callClearScreen call clearScreen before sending
+     * @param callGetCh call getCH after sending
      */
-    public void sendMessageToPlayer(Message message, Player player) {
-        PlayerController playerController = playerControllers.get(player);
-        if (playerController == null)
-            return;
-        playerThreads.execute(() -> playerController.sendMessage(message));
-    }
-
-    /**
-     * send the given text to the corresponding player
-     * @param messageBody message body
-     * @param player receiver player
-     */
-    public void sendTextToPlayer(String messageBody, Player player) {
-        sendMessageToPlayer(new Message(messageBody, God.getInstance()), player);
-    }
-
-    /**
-     * send the given text to the corresponding player and call getCh method for the same player
-     * @param messageBody given text
-     * @param player corresponding player
-     */
-    public void sendTextAndGetCh(String messageBody, Player player) {
+    public void sendCustomMessageToPlayer(Message message, Player player, boolean callClearScreen, boolean callGetCh) {
         PlayerController playerController = playerControllers.get(player);
         if (playerController == null)
             return;
         playerThreads.execute(() -> {
-            playerController.sendMessageFromGod(messageBody);
-            playerController.getCh();
+            playerController.sendCustomMessage(message, callClearScreen, callGetCh);
         });
+        sleep();
     }
 
     /**
-     * send the given message to all players in the game
-     * @param messageBody given message's body
+     * send the given text to the corresponding player and call remaining methods
+     * @param bodyMessage given text
+     * @param player receiver player
+     * @param callClearScreen call clearScreen before sending
+     * @param callGetCh call getCH after sending
      */
-    public void notifyAllPlayers(String messageBody) {
-        for (Player player : players)
-            sendTextToPlayer(messageBody, player);
+    public void sendCustomMessageToPlayer(String bodyMessage, Player player, boolean callClearScreen, boolean callGetCh) {
+        sendCustomMessageToPlayer(new Message(bodyMessage, God.getInstance()), player, callClearScreen, callGetCh);
+    }
+
+    /**
+     * send the given message to all players and call remaining methods.
+     * ATTENTION: this method calls sendMessage for every player in a new thread EXCEPT the last player in the list of
+     * players, so IT IS GUARANTEED THAT THIS THREAD WILL STOP UNTIL ALL PLAYERS HAVE RECEIVED MESSAGE
+     * @param message given message
+     * @param callClearScreen call clearScreen before sending
+     * @param callGetCh call getCH after sending
+     */
+    public void sendCustomMessageToAll(Message message, boolean callClearScreen, boolean callGetCh) {
+        for (int i = 0; i < players.size(); i++) {
+            Player player = players.get(i);
+            if (i != players.size() - 1)
+                sendCustomMessageToPlayer(message, player, callClearScreen, callGetCh);
+            else {
+                PlayerController playerController = playerControllers.get(player);
+                if (playerController == null) {
+                    sleep();
+                    break;
+                }
+                playerController.sendCustomMessage(message, callClearScreen, callGetCh);
+            }
+        }
+    }
+
+    /**
+     * send the given text to all players and call remaining methods
+     * @param bodyMessage given text
+     * @param callClearScreen call clearScreen before sending
+     * @param callGetCh call getCH after sending
+     */
+    public void sendCustomMessageToAll(String bodyMessage, boolean callClearScreen, boolean callGetCh) {
+        sendCustomMessageToAll(new Message(bodyMessage, God.getInstance()), callClearScreen, callGetCh);
+    }
+
+    /**
+     * sleep server for a short time
+     */
+    public void sleep() {
         try {
             Thread.sleep(Setting.getServerRefreshTime());
         }
