@@ -1,6 +1,7 @@
 package Controller;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
@@ -56,7 +57,38 @@ public class ClientHandler {
                 exception.printStackTrace();
             }
         }
+        if (receivedMessage != null && receivedMessage.getBody().equals("exit")) {
+            try {
+                socket.close();
+            }
+            catch (IOException exception) {
+                exception.printStackTrace();
+            }
+        }
         return receivedMessage;
+    }
+
+    /**
+     * check if the client is alive
+     * @return boolean result
+     */
+    public boolean isSocketAlive() {
+        return !socket.isClosed();
+    }
+
+    /**
+     * check if socket stream is empty
+     * @return boolean result
+     */
+    public boolean isStreamEmpty() {
+        try {
+            InputStream inputStream = socket.getInputStream();
+            return (inputStream.available() == 0);
+        }
+        catch (IOException exception) {
+            exception.printStackTrace();
+        }
+        return true;
     }
 
     /**

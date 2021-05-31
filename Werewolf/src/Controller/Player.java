@@ -48,6 +48,7 @@ public class Player extends Person {
     public void joinGame() {
         connectToGame();
         client.start();
+        //noinspection InfiniteLoopStatement
         while (true) {
             String message = inputScanner.nextLine();
             client.sendMessage(new Message(message, this));
@@ -61,7 +62,8 @@ public class Player extends Person {
         while (true) {
             clearScreen();
             System.out.println("Enter server port, you want to connect:");
-            int port = inputScanner.nextInt(); inputScanner.nextLine(); // drop
+//            int port = inputScanner.nextInt(); inputScanner.nextLine(); // drop
+            int port = 2021;
             try {
                 client = new Client(this, port); // connection to the server established
                 clearScreen();

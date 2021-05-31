@@ -50,7 +50,7 @@ public class Client extends Thread {
             try {
                 newMessage = (Message) objectInputStream.readObject();
                 player.showMessage(newMessage);
-                Thread.sleep(Setting.getServerRefreshTime());
+                Thread.sleep(Setting.getSleepTime());
             }
             catch (IOException | ClassNotFoundException | InterruptedException exception) {
                 exception.printStackTrace();

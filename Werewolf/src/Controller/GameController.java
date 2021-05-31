@@ -15,12 +15,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class GameController {
     final static private ExecutorService playerThreads = Executors.newCachedThreadPool();
-    private CopyOnWriteArrayList<Player> players;
+    final private CopyOnWriteArrayList<Player> players; // list of the players, who has not been kicked out of the game yet
     private ServerSocket serverSocket;
-    private ConcurrentHashMap<Player, PlayerController> playerControllers;
+    final private ConcurrentHashMap<Player, PlayerController> playerControllers; // maps each player to his PlayerController
     private int dayNumber; // how many days have been passed
-    private DAYTIME daytime;
-
+    final private DAYTIME daytime; // daytime of the current game
 
     /**
      * class constructor
@@ -44,8 +43,10 @@ public class GameController {
     public void startGame() {
         if (dayNumber == 0)
             startPreparationDay();
-        if (dayNumber == 1)
+        if (dayNumber == 1) {
             startIntroductionDay();
+
+        }
     }
 
     /**
@@ -54,6 +55,7 @@ public class GameController {
     public void startPreparationDay() {
         startWaitingLobby();
         distributeRoles();
+        sendCustomMessageToAll("Press Enter whenever you're ready to start game.", true, true);
         dayNumber++;
     }
 
@@ -82,7 +84,7 @@ public class GameController {
             });
             try {
                 //noinspection BusyWait
-                Thread.sleep(Setting.getServerRefreshTime());
+                Thread.sleep(Setting.getSleepTime());
             }
             catch (InterruptedException e) {
                 e.printStackTrace();
@@ -92,7 +94,7 @@ public class GameController {
         while (players.size() < Setting.getNumberOfPlayers()) { // waits until all players have joined to the game
             try {
                 //noinspection BusyWait
-                Thread.sleep(Setting.getServerRefreshTime());
+                Thread.sleep(Setting.getSleepTime());
             }
             catch (InterruptedException exception) {
                 exception.printStackTrace();
@@ -130,8 +132,9 @@ public class GameController {
             }
         }
         for (int i = numberOfMafias; i < players.size(); i++) {
-            int citizenIndex = numberOfMafias - i;
+            int citizenIndex = i - numberOfMafias;
             Player player = players.get(i);
+            //noinspection EnhancedSwitchMigration
             switch (citizenIndex) {
                 case 0:
                     player = new Doctor(player);
@@ -162,6 +165,8 @@ public class GameController {
                     sendCustomMessageToPlayer("You are Citizen of the game.", player, true, true);
             }
         }
+        sendCustomMessageToAll("Roles distribution has been finished.", true, true);
+        System.out.println("Roles distribution has been finished.");
     }
 
     /**
@@ -182,7 +187,16 @@ public class GameController {
      * start introduction day.
      */
     public void startIntroductionDay() {
-
+        sendCustomMessageToAll("Introduction day started. Each player can speak for "
+                    + Setting.getIntroductionDayTurnTime().toString() + " seconds in his turn.",
+                    true, false);
+        for (Player player : players) {
+            PlayerController playerController = playerControllers.get(player);
+            if (playerController == null)
+                continue;
+            sendCustomMessageToPlayer("It's your turn now, enter 'stop' to finish your turn.", player, false, false);
+            playerController.talk(Setting.getIntroductionDayTurnTime());
+        }
     }
 
     /**
@@ -195,6 +209,17 @@ public class GameController {
             if (player.getUsername().equals(username))
                 return false;
         return true;
+    }
+
+    /**
+     * kick the given player out of the game.
+     * a player will kicked out of the game, when either disconnected or left the game
+     * @param player given player
+     */
+    public void kickPlayer(Player player) {
+        players.remove(player);
+        playerControllers.remove(player);
+        sendCustomMessageToAll("\n" + player + " has been kicked out/disconnected from game.\n", false, false);
     }
 
     /**
@@ -222,31 +247,33 @@ public class GameController {
      * @param callGetCh call getCH after sending
      */
     public void sendCustomMessageToPlayer(String bodyMessage, Player player, boolean callClearScreen, boolean callGetCh) {
-        sendCustomMessageToPlayer(new Message(bodyMessage, God.getInstance()), player, callClearScreen, callGetCh);
+        sendCustomMessageToPlayer(new Message(bodyMessage, God.getInstance(), daytime), player, callClearScreen, callGetCh);
     }
 
     /**
      * send the given message to all players and call remaining methods.
-     * ATTENTION: this method calls sendMessage for every player in a new thread EXCEPT the last player in the list of
-     * players, so IT IS GUARANTEED THAT THIS THREAD WILL STOP UNTIL ALL PLAYERS HAVE RECEIVED MESSAGE
+     * ATTENTION: this method calls sendMessage for every player in a new thread and waits until all messages have been
+     * sent, so IT IS GUARANTEED THAT THIS THREAD WILL STOP UNTIL ALL PLAYERS HAVE RECEIVED MESSAGE
      * @param message given message
      * @param callClearScreen call clearScreen before sending
      * @param callGetCh call getCH after sending
      */
     public void sendCustomMessageToAll(Message message, boolean callClearScreen, boolean callGetCh) {
+        AtomicInteger sentMessage = new AtomicInteger(0);
         for (int i = 0; i < players.size(); i++) {
             Player player = players.get(i);
-            if (i != players.size() - 1)
-                sendCustomMessageToPlayer(message, player, callClearScreen, callGetCh);
-            else {
-                PlayerController playerController = playerControllers.get(player);
-                if (playerController == null) {
-                    sleep();
-                    break;
-                }
+            if (player.equals(message.getSender()))
+                continue;
+            PlayerController playerController = playerControllers.get(player);
+            if (playerController == null)
+                return;
+            playerThreads.execute(() -> {
                 playerController.sendCustomMessage(message, callClearScreen, callGetCh);
-            }
+                sentMessage.incrementAndGet();
+            });
         }
+        while (sentMessage.get() < players.size())
+            sleep();
     }
 
     /**
@@ -256,7 +283,7 @@ public class GameController {
      * @param callGetCh call getCH after sending
      */
     public void sendCustomMessageToAll(String bodyMessage, boolean callClearScreen, boolean callGetCh) {
-        sendCustomMessageToAll(new Message(bodyMessage, God.getInstance()), callClearScreen, callGetCh);
+        sendCustomMessageToAll(new Message(bodyMessage, God.getInstance(), daytime), callClearScreen, callGetCh);
     }
 
     /**
@@ -264,7 +291,7 @@ public class GameController {
      */
     public void sleep() {
         try {
-            Thread.sleep(Setting.getServerRefreshTime());
+            Thread.sleep(Setting.getSleepTime());
         }
         catch (InterruptedException exception) {
             exception.printStackTrace();

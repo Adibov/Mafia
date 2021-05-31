@@ -2,6 +2,11 @@ package Controller;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.time.LocalTime;
+import java.time.Period;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalAmount;
+import java.time.temporal.TemporalField;
 import java.util.Objects;
 
 /**
@@ -12,7 +17,7 @@ import java.util.Objects;
 public class PlayerController {
     private Player player;
     private ClientHandler clientHandler;
-    private GameController gameController;
+    private final GameController gameController;
 
     /**
      * class constructor
@@ -50,6 +55,44 @@ public class PlayerController {
     }
 
     /**
+     * enable chatroom by the given duration
+     * @param duration given duration
+     */
+    public void talk(LocalTime duration) {
+        talk(LocalTime.now(), duration);
+    }
+
+    /**
+     * enable chatroom from starting time by the given duration
+     * @param startingTime chatroom starting time
+     * @param duration chatroom duration
+     */
+    public void talk(LocalTime startingTime, LocalTime duration) {
+        LocalTime lastTimeRounded = startingTime; // last time which was multiple of quarters
+        while (true) {
+            long remainingTime = LocalTime.now().toSecondOfDay() - startingTime.toSecondOfDay();
+            if (remainingTime >= duration.toSecondOfDay())
+                break;
+//            if (LocalTime.now().toSecondOfDay() - lastTimeRounded.toSecondOfDay() >=
+//                    Setting.getChatroomRemainingTimeAlertCycle().toSecondOfDay()) {
+//
+//                lastTimeRounded = lastTimeRounded.minusSeconds(Setting.getChatroomRemainingTimeAlertCycle().toSecondOfDay());
+//                sendCustomMessage(lastTimeRounded.getMinute() + " minute(s) and " +
+//                        lastTimeRounded.getSecond() + " second(s) remaining.", false, false);
+//            }
+
+            if (!clientHandler.isStreamEmpty()) {
+                Message message = getMessage();
+                if (message.getBody().equals("end")) // user wants to end his speaking turn
+                    break;
+                System.out.println("Message sender: " + message.getSender());
+                gameController.sendCustomMessageToAll(message, false, false);
+            }
+        }
+        System.out.println(player + " finished");
+    }
+
+    /**
      * clear screen for the player
      */
     private void clearScreen() {
@@ -71,6 +114,8 @@ public class PlayerController {
     private void sendMessage(Message message) {
         if (clientHandler == null)
             return;
+        if (!clientHandler.isSocketAlive())
+            gameController.kickPlayer(player);
         clientHandler.sendMessage(message);
     }
 
@@ -87,11 +132,12 @@ public class PlayerController {
      * @return entered message
      */
     public synchronized Message getMessage() {
-        synchronized(this) {
-            if (clientHandler == null)
-                return null;
-            return clientHandler.getMessage();
-        }
+        if (clientHandler == null)
+            return null;
+        Message receivedMessage = clientHandler.getMessage();
+        if (player != null)
+            receivedMessage.setSender(player);
+        return receivedMessage;
     }
 
     /**

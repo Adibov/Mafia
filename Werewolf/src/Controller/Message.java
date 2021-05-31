@@ -14,7 +14,7 @@ enum DAYTIME implements Serializable {
  */
 public class Message implements Serializable {
     final private String body;
-    final private Person sender;
+    private Person sender;
     final private LocalTime time;
     final private DAYTIME messageTime;
 
@@ -67,6 +67,14 @@ public class Message implements Serializable {
      */
     public DAYTIME getMessageType() {
         return messageTime;
+    }
+
+    /**
+     * sender setter
+     * @param sender sender new value
+     */
+    public void setSender(Person sender) {
+        this.sender = sender;
     }
 
     /**
