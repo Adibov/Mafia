@@ -68,24 +68,17 @@ public class PlayerController {
      * @param duration chatroom duration
      */
     public void talk(LocalTime startingTime, LocalTime duration) {
-        LocalTime lastTimeRounded = startingTime; // last time which was multiple of quarters
         while (true) {
-            long remainingTime = LocalTime.now().toSecondOfDay() - startingTime.toSecondOfDay();
-            if (remainingTime >= duration.toSecondOfDay())
+            long remainingTime = duration.toSecondOfDay() - (LocalTime.now().toSecondOfDay() - startingTime.toSecondOfDay());
+            if (remainingTime <= 0)
                 break;
-//            if (LocalTime.now().toSecondOfDay() - lastTimeRounded.toSecondOfDay() >=
-//                    Setting.getChatroomRemainingTimeAlertCycle().toSecondOfDay()) {
-//
-//                lastTimeRounded = lastTimeRounded.minusSeconds(Setting.getChatroomRemainingTimeAlertCycle().toSecondOfDay());
-//                sendCustomMessage(lastTimeRounded.getMinute() + " minute(s) and " +
-//                        lastTimeRounded.getSecond() + " second(s) remaining.", false, false);
-//            }
+            System.out.println("Remaining time: " + remainingTime);
 
             if (!clientHandler.isStreamEmpty()) {
                 Message message = getMessage();
                 if (message.getBody().equals("end")) // user wants to end his speaking turn
                     break;
-                System.out.println("Message sender: " + message.getSender());
+                sendCustomMessage(remainingTime + " second(s) remaining.", false, false);
                 gameController.sendCustomMessageToAll(message, false, false);
             }
         }

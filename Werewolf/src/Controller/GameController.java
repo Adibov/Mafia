@@ -100,9 +100,8 @@ public class GameController {
                 exception.printStackTrace();
             }
         }
-        sendCustomMessageToAll("All players have joined the game.", true, true);
+//        sendCustomMessageToAll("All players have joined the game.", true, true);
         System.out.println("All players have joined the game.");
-        sleep();
     }
 
     /**
@@ -110,7 +109,7 @@ public class GameController {
      */
     public void distributeRoles() {
         System.out.println("Starting to distribute roles.");
-        sendCustomMessageToAll("God is distributing roles, please wait...", true, true);
+//        sendCustomMessageToAll("God is distributing roles, please wait...", true, true);
         randomShuffle(players);
 
         final int numberOfMafias = Setting.getNumberOfMafias();
@@ -165,7 +164,7 @@ public class GameController {
                     sendCustomMessageToPlayer("You are Citizen of the game.", player, true, true);
             }
         }
-        sendCustomMessageToAll("Roles distribution has been finished.", true, true);
+//        sendCustomMessageToAll("Roles distribution has been finished.", true, true);
         System.out.println("Roles distribution has been finished.");
     }
 
@@ -196,6 +195,7 @@ public class GameController {
                 continue;
             sendCustomMessageToPlayer("It's your turn now, enter 'stop' to finish your turn.", player, false, false);
             playerController.talk(Setting.getIntroductionDayTurnTime());
+            sendCustomMessageToPlayer("Your turn has been finished.", player, false, false);
         }
     }
 
@@ -262,8 +262,10 @@ public class GameController {
         AtomicInteger sentMessage = new AtomicInteger(0);
         for (int i = 0; i < players.size(); i++) {
             Player player = players.get(i);
-            if (player.equals(message.getSender()))
+            if (player.equals(message.getSender())) {
+                sentMessage.incrementAndGet();
                 continue;
+            }
             PlayerController playerController = playerControllers.get(player);
             if (playerController == null)
                 return;
@@ -272,7 +274,7 @@ public class GameController {
                 sentMessage.incrementAndGet();
             });
         }
-        while (sentMessage.get() < players.size())
+        while (sentMessage.get() < players.size()) // to make sure that all players have received sent message
             sleep();
     }
 
