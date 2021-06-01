@@ -34,7 +34,9 @@ public class ClientHandler {
      * send the given message via the socket
      * @param message given message
      */
-    public synchronized void sendMessage (Message message){
+    public synchronized void sendMessage (Message message) {
+        if (isSocketClosed())
+            return;
         try {
             objectOutputStream.writeObject(message);
         } catch (IOException exception) {
@@ -48,6 +50,8 @@ public class ClientHandler {
      */
     public synchronized Message getMessage() {
         Message receivedMessage = null;
+        if (isSocketClosed())
+            return null;
         while (true) {
             try {
                 receivedMessage = (Message) objectInputStream.readObject();
@@ -72,8 +76,8 @@ public class ClientHandler {
      * check if the client is alive
      * @return boolean result
      */
-    public boolean isSocketAlive() {
-        return !socket.isClosed();
+    public boolean isSocketClosed() {
+        return socket.isClosed();
     }
 
     /**

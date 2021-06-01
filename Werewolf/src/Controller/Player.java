@@ -48,10 +48,13 @@ public class Player extends Person {
     public void joinGame() {
         connectToGame();
         client.start();
-        //noinspection InfiniteLoopStatement
         while (true) {
             String message = inputScanner.nextLine();
             client.sendMessage(new Message(message, this));
+            if (message.equals("exit")) {
+                client.setServerUp(false);
+                break;
+            }
         }
     }
 

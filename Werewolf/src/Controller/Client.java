@@ -1,9 +1,11 @@
 package Controller;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Client class, handles player interactions between server
@@ -15,6 +17,7 @@ public class Client extends Thread {
     private Socket socket;
     private ObjectOutputStream objectOutputStream;
     private ObjectInputStream objectInputStream;
+    private AtomicBoolean isServerUp; // defined atomic so threads don't conflict
 
     /**
      * class constructor
@@ -32,6 +35,7 @@ public class Client extends Thread {
             exception.printStackTrace();
             socket = null;
         }
+        isServerUp = new AtomicBoolean(true);
     }
 
     /**
@@ -46,16 +50,27 @@ public class Client extends Thread {
      */
     private void runInputEngine() {
         Message newMessage;
-        while (true) {
+        while (isServerUp.get()) {
             try {
-                newMessage = (Message) objectInputStream.readObject();
-                player.showMessage(newMessage);
-                Thread.sleep(Setting.getSleepTime());
+                if (socket.getInputStream().available() > 0) {
+                    newMessage = (Message) objectInputStream.readObject();
+                    player.showMessage(newMessage);
+                }
+                //noinspection BusyWait
+                Thread.sleep(2L * Setting.getSleepTime());
             }
             catch (IOException | ClassNotFoundException | InterruptedException exception) {
                 exception.printStackTrace();
             }
         }
+    }
+
+    /**
+     * serverUp setter
+     * @param serverUp serverUp new value
+     */
+    public void setServerUp(boolean serverUp) {
+        isServerUp.set(serverUp);
     }
 
     /**

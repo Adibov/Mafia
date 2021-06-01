@@ -14,7 +14,7 @@ public class Setting {
 
 
     // server setting
-    final static private int sleepTime = 700; // in milliseconds
+    final static private int sleepTime = 200; // in milliseconds
     final static private int clearScreenBlankLines = 50;
     // how much time does a player can talk in introduction day
     final static private LocalTime introductionDayTurnTime = LocalTime.of(0, 0, 30);

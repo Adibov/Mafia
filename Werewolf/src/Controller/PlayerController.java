@@ -1,13 +1,7 @@
 package Controller;
 
 import java.io.IOException;
-import java.net.Socket;
 import java.time.LocalTime;
-import java.time.Period;
-import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalAmount;
-import java.time.temporal.TemporalField;
-import java.util.Objects;
 
 /**
  * PlayerController class manages players action. Each player has his own PlayerController
@@ -68,12 +62,20 @@ public class PlayerController {
      * @param duration chatroom duration
      */
     public void talk(LocalTime startingTime, LocalTime duration) {
+        long lastPrintedTime = 0;
         while (true) {
             long remainingTime = duration.toSecondOfDay() - (LocalTime.now().toSecondOfDay() - startingTime.toSecondOfDay());
             if (remainingTime <= 0)
                 break;
-            System.out.println("Remaining time: " + remainingTime);
+            if (remainingTime % 5 == 0 && remainingTime != lastPrintedTime) {
+                System.out.println("Remaining time: " + remainingTime);
+                lastPrintedTime = remainingTime;
+            }
 
+            if (clientHandler.isSocketClosed()) {
+                gameController.kickPlayer(player);
+                break;
+            }
             if (!clientHandler.isStreamEmpty()) {
                 Message message = getMessage();
                 if (message.getBody().equals("end")) // user wants to end his speaking turn
@@ -107,7 +109,7 @@ public class PlayerController {
     private void sendMessage(Message message) {
         if (clientHandler == null)
             return;
-        if (!clientHandler.isSocketAlive())
+        if (clientHandler.isSocketClosed())
             gameController.kickPlayer(player);
         clientHandler.sendMessage(message);
     }
@@ -127,7 +129,13 @@ public class PlayerController {
     public synchronized Message getMessage() {
         if (clientHandler == null)
             return null;
+        if (clientHandler.isSocketClosed())
+            gameController.kickPlayer(player);
         Message receivedMessage = clientHandler.getMessage();
+        if (clientHandler.isSocketClosed())
+            gameController.kickPlayer(player);
+        if (receivedMessage == null)
+            return null;
         if (player != null)
             receivedMessage.setSender(player);
         return receivedMessage;

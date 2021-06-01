@@ -217,6 +217,8 @@ public class GameController {
      * @param player given player
      */
     public void kickPlayer(Player player) {
+        if (player == null)
+            return;
         players.remove(player);
         playerControllers.remove(player);
         sendCustomMessageToAll("\n" + player + " has been kicked out/disconnected from game.\n", false, false);
