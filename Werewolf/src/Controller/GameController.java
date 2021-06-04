@@ -19,7 +19,7 @@ public class GameController {
     private ServerSocket serverSocket;
     final private ConcurrentHashMap<Player, PlayerController> playerControllers; // maps each player to his PlayerController
     private int dayNumber; // how many days have been passed
-    final private DAYTIME daytime; // daytime of the current game
+    private DAYTIME daytime; // daytime of the current game
 
     /**
      * class constructor
@@ -45,7 +45,8 @@ public class GameController {
             startPreparationDay();
         if (dayNumber == 1) {
             startIntroductionDay();
-
+            sleepPlayers();
+            wakeupPerson("Mafia");
         }
     }
 
@@ -82,24 +83,11 @@ public class GameController {
                 if (remainingPlayer > 0)
                     sendCustomMessageToAll("Waiting for other players to join, " + remainingPlayer + " player(s) left.", true, false);
             });
-            try {
-                //noinspection BusyWait
-                Thread.sleep(Setting.getSleepTime());
-            }
-            catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            sleep();
             whileLoopCount++;
         }
-        while (players.size() < Setting.getNumberOfPlayers()) { // waits until all players have joined to the game
-            try {
-                //noinspection BusyWait
-                Thread.sleep(Setting.getSleepTime());
-            }
-            catch (InterruptedException exception) {
-                exception.printStackTrace();
-            }
-        }
+        while (players.size() < Setting.getNumberOfPlayers()) // waits until all players have joined to the game
+            sleep();
 //        sendCustomMessageToAll("All players have joined the game.", true, true);
         System.out.println("All players have joined the game.");
     }
@@ -164,6 +152,7 @@ public class GameController {
                     sendCustomMessageToPlayer("You are Citizen of the game.", player, true, true);
             }
         }
+        randomShuffle(players); // so that players can't discover other players role by their talking turn :))
 //        sendCustomMessageToAll("Roles distribution has been finished.", true, true);
         System.out.println("Roles distribution has been finished.");
     }
@@ -197,6 +186,35 @@ public class GameController {
             playerController.talk(Setting.getIntroductionDayTurnTime());
             sendCustomMessageToPlayer("Your turn has been finished.", player, false, false);
         }
+        sendCustomMessageToAll("Introduction day finished.", true, false);
+    }
+
+    /**
+     * make all players asleep
+     */
+    public void sleepPlayers() {
+        sendCustomMessageToAll(
+                "It's night now, all players have to sleep. Please wait until night ends.",
+                false,
+                false
+        );
+        for (Player player : players)
+            player.setAwake(false);
+        daytime = DAYTIME.NIGHT;
+    }
+
+    /**
+     * wake a group of players
+     * @param className class name of the corresponding group
+     */
+    public void wakeupPerson(String className) {
+        for (Player player : players)
+            if (player.getClass().toString().equals(className)) {
+                PlayerController playerController = playerControllers.get(player);
+                if (playerController == null)
+                    continue;
+                playerThreads.execute(playerController::wakeup);
+            }
     }
 
     /**
@@ -262,9 +280,8 @@ public class GameController {
      */
     public void sendCustomMessageToAll(Message message, boolean callClearScreen, boolean callGetCh) {
         AtomicInteger sentMessage = new AtomicInteger(0);
-        for (int i = 0; i < players.size(); i++) {
-            Player player = players.get(i);
-            if (player.equals(message.getSender())) {
+        for (Player player : players) {
+            if (player.equals(message.getSender()) || !player.isAwake()) {
                 sentMessage.incrementAndGet();
                 continue;
             }

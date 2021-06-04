@@ -15,6 +15,7 @@ public class Player extends Person {
     private transient Client client;
     final transient private Scanner inputScanner = new Scanner(System.in);
     private boolean isAlive;
+    private boolean isAwake;
 
     /**
      * class constructor, for making a player with no username
@@ -22,6 +23,7 @@ public class Player extends Person {
     public Player() {
         super("");
         isAlive = true;
+        isAwake = true;
     }
 
     /**
@@ -31,6 +33,7 @@ public class Player extends Person {
     public Player(String username) {
         super(username);
         isAlive = true;
+        isAwake = true;
     }
 
     /**
@@ -111,6 +114,22 @@ public class Player extends Person {
      */
     public boolean isAlive() {
         return isAlive;
+    }
+
+    /**
+     * isAwake getter
+     * @return isAwake
+     */
+    public boolean isAwake() {
+        return isAwake;
+    }
+
+    /**
+     * isAwake setter
+     * @param awake isAwake new value
+     */
+    public void setAwake(boolean awake) {
+        isAwake = awake;
     }
 
     /**

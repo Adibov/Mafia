@@ -88,6 +88,14 @@ public class PlayerController {
     }
 
     /**
+     * wake the player up
+     */
+    public void wakeup() {
+        player.setAwake(true);
+        sendCustomMessage("You are awake now.", false, true);
+    }
+
+    /**
      * clear screen for the player
      */
     private void clearScreen() {
