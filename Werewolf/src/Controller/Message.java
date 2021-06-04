@@ -81,6 +81,9 @@ public class Message implements Serializable {
      * show message in the stdout
      */
     public void show() {
-        System.out.println(sender + ":\n" + body);
+        if (!sender.getUsername().equals("God"))
+            System.out.println(sender + ":\n" + body);
+        else
+            System.out.println(body);
     }
 }

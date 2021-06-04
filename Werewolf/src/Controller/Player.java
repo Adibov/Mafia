@@ -1,8 +1,11 @@
 package Controller;
 
+import Roles.*;
+
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.Socket;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Scanner;
 
@@ -98,6 +101,52 @@ public class Player extends Person {
     public void getCh() {
         System.out.println("Press Enter to continue...");
         inputScanner.nextLine();
+    }
+
+    /**
+     * check if the player has the given role
+     * @param role given role
+     * @return boolean result
+     */
+    @SuppressWarnings("SpellCheckingInspection")
+    public boolean checkRole(String role) {
+        role = role.replaceAll(" ", ""); // delete all spaces in the string
+        role = role.toLowerCase(); // make it lowercase to make it case insesitive
+        //noinspection EnhancedSwitchMigration
+        switch (role) {
+            case "mafia":
+                return this instanceof Mafia;
+            case "godfather":
+                return this instanceof GodFather;
+            case "doctorlecter":
+                return this instanceof DoctorLecter;
+            case "citizen":
+                return this instanceof Citizen;
+            case "doctor":
+                return this instanceof Doctor;
+            case "detector":
+                return this instanceof Detector;
+            case "sniper":
+                return this instanceof Sniper;
+            case "mayor":
+                return this instanceof Mayor;
+            case "psychologist":
+                return this instanceof Psychologist;
+            case "diehard":
+                return this instanceof DieHard;
+            default:
+                return role.equals("all");
+        }
+    }
+
+    /**
+     * check if the given player is in a same team (Citizen or Mafia)
+     * @param player given player
+     * @return boolean result
+     */
+    public boolean isInSameTeam(Player player) {
+        return (this instanceof Mafia && player instanceof Mafia) ||
+               (this instanceof Citizen && player instanceof Citizen);
     }
 
     /**

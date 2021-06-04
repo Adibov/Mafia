@@ -202,6 +202,7 @@ public class PlayerController {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof PlayerController)) return false;
+        //noinspection PatternVariableCanBeUsed
         PlayerController that = (PlayerController) o;
         return player.equals(that.getPlayer());
     }

@@ -8,18 +8,21 @@ import java.time.LocalTime;
  * @version 1.0
  */
 public class Setting {
-    // gameplay setting
-    final static private int numberOfPlayers = 3; // total number of players
-    final static private int numberOfMafias = numberOfPlayers / 3; // total number of mafias
+    //////////// gameplay setting \\\\\\\\\\\\\\\\\
+    // total number of players
+    final static private int numberOfPlayers = 3;
+    // total number of mafias
+    final static private int numberOfMafias = numberOfPlayers / 3;
+    // how much time does a player can talk in an introduction phase
+    final static private LocalTime introductionTurnTime = LocalTime.of(0, 0, 2);
+    // how much time does a player can make his turn in night
+    final static private LocalTime nighActionTime = LocalTime.of(0, 0, 30);
 
-
-    // server setting
-    final static private int sleepTime = 200; // in milliseconds
+    ///////////////// server setting \\\\\\\\\\\\\\\\\\\\
+    // sleep time in milliseconds
+    final static private int sleepTime = 200;
+    // how many blank lines to printed in clearScreen method
     final static private int clearScreenBlankLines = 50;
-    // how much time does a player can talk in introduction day
-    final static private LocalTime introductionDayTurnTime = LocalTime.of(0, 0, 30);
-    // server alert cycle time
-    final static private LocalTime chatroomRemainingTimeAlertCycle = LocalTime.of(0, 0, 15);
 
     /**
      * numberOfPlayers getter
@@ -57,15 +60,15 @@ public class Setting {
      * introductionDayTurnTime getter
      * @return introductionDayTurnTime
      */
-    public static LocalTime getIntroductionDayTurnTime() {
-        return introductionDayTurnTime;
+    public static LocalTime getIntroductionTurnTime() {
+        return introductionTurnTime;
     }
 
     /**
-     * chatroomRemainingTimeAlertCycle getter
-     * @return chatroomRemainingTimeAlertCycle
+     * nightActionTime getter
+     * @return nightActionTime
      */
-    public static LocalTime getChatroomRemainingTimeAlertCycle() {
-        return chatroomRemainingTimeAlertCycle;
+    public static LocalTime getNighActionTime() {
+        return nighActionTime;
     }
 }
