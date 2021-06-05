@@ -129,43 +129,42 @@ public class GameController {
         }
         for (int i = numberOfMafias; i < numberOfPlayers; i++) {
             int citizenIndex = i - numberOfMafias;
-            // to stop thread for the last receiver to make sure that all players have received message
-            boolean isLastPlayer = (i == (numberOfPlayers - 1));
             Player player = players.get(i), newRole = player;
             PlayerController playerController = playerControllers.get(player);
             //noinspection EnhancedSwitchMigration
             switch (citizenIndex) {
                 case 0:
                     newRole = new Doctor(newRole);
-                    sendCustomMessageToPlayer("You are Doctor of the game.", newRole, true, true, isLastPlayer);
+                    sendCustomMessageToPlayer("You are Doctor of the game.", newRole, true, true);
                     break;
                 case 1:
                     newRole = new Detector(newRole);
-                    sendCustomMessageToPlayer("You are Detector of the game.", newRole, true, true, isLastPlayer);
+                    sendCustomMessageToPlayer("You are Detector of the game.", newRole, true, true);
                     break;
                 case 2:
                     newRole = new Sniper(newRole);
-                    sendCustomMessageToPlayer("You are Sniper of the game.", newRole, true, true, isLastPlayer);
+                    sendCustomMessageToPlayer("You are Sniper of the game.", newRole, true, true);
                     break;
                 case 3:
                     newRole = new Mayor(newRole);
-                    sendCustomMessageToPlayer("You are Mayor of the game.", newRole, true, true, isLastPlayer);
+                    sendCustomMessageToPlayer("You are Mayor of the game.", newRole, true, true);
                     break;
                 case 4:
                     newRole = new Psychologist(newRole);
-                    sendCustomMessageToPlayer("You are Psychologist of the game.", newRole, true, true, isLastPlayer);
+                    sendCustomMessageToPlayer("You are Psychologist of the game.", newRole, true, true);
                     break;
                 case 5:
                     newRole = new DieHard(newRole);
-                    sendCustomMessageToPlayer("You are Die Hard of the game.", newRole, true, true, isLastPlayer);
+                    sendCustomMessageToPlayer("You are Die Hard of the game.", newRole, true, true);
                     break;
                 default:
                     newRole = new Citizen(newRole);
-                    sendCustomMessageToPlayer("You are Citizen of the game.", newRole, true, true, isLastPlayer);
+                    sendCustomMessageToPlayer("You are Citizen of the game.", newRole, true, true);
             }
             playerControllers.remove(player);
             newPlayers.add(newRole);
             playerControllers.put(newRole, playerController);
+            sleep();
         }
         players = newPlayers;
         randomShuffle(players); // so that players can't discover other players role by their talking turn :))
@@ -279,15 +278,19 @@ public class GameController {
                                          boolean callClearScreen,
                                          boolean callGetCh) {
         int playerCount = 1;
+        StringBuilder message = new StringBuilder();
         for (Player player : players) {
-            if (player.equals(targetPlayer))
+            if (player.equals(targetPlayer)) // doesn't show himself
                 continue;
-            String message = playerCount + ") " + player;
-            if (showRoles && targetPlayer.isInSameTeam(player))
-                message += "(" + player.getClass() + ")";
-            sendCustomMessageToPlayer(message, player, callClearScreen, callGetCh);
+            message.append(playerCount).append(") ").append(player);
+            if (showRoles && targetPlayer.isInSameTeam(player)) {
+                String role = player.getClass().toString().split("\\.")[1];
+                message.append("(").append(role).append(")");
+            }
+            message.append("\n");
             playerCount++;
         }
+        sendCustomMessageToPlayer(message.toString(), targetPlayer, callClearScreen, callGetCh);
     }
 
     /**
