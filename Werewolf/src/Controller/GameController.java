@@ -318,6 +318,15 @@ public class GameController {
     }
 
     /**
+     * check if the given username can register to the game
+     * @param username given username
+     * @return boolean result
+     */
+    public boolean isUsernameValid(String username) {
+        return username.length() > 3;
+    }
+
+    /**
      * kick the given player out of the game.
      * a player will kicked out of the game, when either disconnected or left the game
      * @param player given player

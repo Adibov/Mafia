@@ -36,11 +36,19 @@ public class PlayerController {
             clearScreen();
             sendMessage("Enter an username:");
             username = getMessage().getBody();
-            if (gameController.isUsernameAvailable(username))
-                break;
-            clearScreen();
-            sendMessage("This username has been already taken.");
-            getCh();
+            if (!gameController.isUsernameAvailable(username)) {
+                clearScreen();
+                sendMessage("This username has been already taken.");
+                getCh();
+                continue;
+            }
+            else if (!gameController.isUsernameValid(username)) {
+                clearScreen();
+                sendMessage("Username must have at least 4 characters.");
+                getCh();
+                continue;
+            }
+            break;
         }
         player = new Player(username);
         clearScreen();
