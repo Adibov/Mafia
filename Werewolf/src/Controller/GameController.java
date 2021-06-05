@@ -4,6 +4,7 @@ import Roles.*;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.time.LocalTime;
 import java.util.Random;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -47,7 +48,9 @@ public class GameController {
         if (dayNumber == 1) {
             startIntroductionDay();
             startFirstNight();
-
+        }
+        while (!isGameFinished()) {
+            startRegularDay();
         }
     }
 
@@ -240,8 +243,58 @@ public class GameController {
             sleepGroup("Mayor");
             sendCustomGroupFilteredMessage("Mayor has slept.", "Mayor", false, false);
         }
-        sendCustomMessageToAll("Night has been finished.");
+//        sendCustomMessageToAll("Night has been finished.", true, true);
         System.out.println("First night has been finished.");
+        daytime = DAYTIME.DAY;
+    }
+
+    /**
+     * start a regular day of the game in this order:
+     * 1. wakeup all players
+     * 2. report last night events
+     * 3. let them speak in turn
+     * 4. hold a voting for kicking players
+     */
+    public void startRegularDay() {
+        wakeupGroup("All", true, false, true);
+        reportLastNightEvents();
+        showAlivePlayersToGroup("All", false, false, false, true);
+        sendCustomMessageToAll(
+                "Discussion phase started, all players can speak for " +
+                Setting.getDiscussionPhaseTime().getMinute() +
+                " minutes. send 'end' word to finish speaking.",
+                false, false, true);
+        startChatroom();
+    }
+
+    /**
+     * report last night events to players
+     */
+    public void reportLastNightEvents() {
+
+    }
+
+    /**
+     * start chatroom, so players can talk to each other
+     */
+    public void startChatroom() {
+        LocalTime startingTime = LocalTime.now();
+        int loopCounter = 0;
+        AtomicInteger finishedThread = new AtomicInteger(0);
+        for (Player player : players)
+            if (player.isAlive()) {
+                PlayerController playerController = playerControllers.get(player);
+                if (playerController == null)
+                    continue;
+                playerThreads.execute(() -> {
+                    playerController.talk(startingTime, Setting.getDiscussionPhaseTime());
+                    finishedThread.incrementAndGet();
+                });
+                loopCounter++;
+            }
+        while (finishedThread.get() < loopCounter)
+            sleep();
+        sendCustomMessageToAll("Discussion time finished.", true, true, true);
     }
 
     /**
@@ -285,8 +338,12 @@ public class GameController {
     /**
      * wake a group of players
      * @param role role of the corresponding group
+     * @param options call clearScreen, call getCh, wait for all message to be sent
      */
-    public void wakeupGroup(String role) {
+    public void wakeupGroup(String role, boolean... options) {
+        boolean waitForResponse = false;
+        if (options.length > 2)
+            waitForResponse = options[2];
         AtomicInteger finishedThread = new AtomicInteger(0);
         int threadCount = 0;
         for (Player player : players) {
@@ -295,13 +352,13 @@ public class GameController {
                 if (playerController == null)
                     continue;
                 playerThreads.execute(() -> {
-                    playerController.wakeup();
+                    playerController.wakeup(options);
                     finishedThread.incrementAndGet();
                 });
                 threadCount++;
             }
         }
-        while (finishedThread.get() < threadCount) // waits until all players wakeup
+        while (waitForResponse && finishedThread.get() < threadCount) // waits until all players wakeup
             sleep();
     }
 
@@ -327,6 +384,22 @@ public class GameController {
     }
 
     /**
+     * check if game if finished
+     * @return boolean result
+     */
+    public boolean isGameFinished() {
+        int numberOfMafias = 0, numberOfCitizens = 0;
+        for (Player player : players)
+            if (player.isAlive()) {
+                if (player.hasRole("Mafia"))
+                    numberOfMafias++;
+                else
+                    numberOfCitizens++;
+            }
+        return (numberOfCitizens == numberOfMafias) || (numberOfMafias == 0);
+    }
+
+    /**
      * kick the given player out of the game.
      * a player will kicked out of the game, when either disconnected or left the game
      * @param player given player
@@ -348,6 +421,7 @@ public class GameController {
     public void showAlivePlayersToPlayer(Player targetPlayer, boolean showRoles, boolean... options) {
         int playerCount = 1;
         StringBuilder message = new StringBuilder();
+        message.append("Alive players:\n");
         for (Player player : players) {
             if (player.equals(targetPlayer)) // doesn't show himself
                 continue;

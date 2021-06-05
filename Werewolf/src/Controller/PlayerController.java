@@ -86,9 +86,10 @@ public class PlayerController {
             }
             if (!clientHandler.isStreamEmpty()) {
                 Message message = getMessage();
-                if (message.getBody().equals("end")) // user wants to end his speaking turn
+                if (message.getBody().equals("end")) // user wants to end his speaking
                     break;
-                sendCustomMessage(remainingTime + " second(s) remaining.", false, false);
+                if (remainingTime < 90)
+                    sendCustomMessage(remainingTime + " second(s) remaining.", false, false);
                 gameController.sendCustomMessageToAll(message, false, false);
             }
         }
@@ -97,10 +98,16 @@ public class PlayerController {
 
     /**
      * wake the player up
+     * @param options call clearScreen, call getCh
      */
-    public void wakeup() {
+    public void wakeup(boolean... options) {
+        boolean callClearScreen = false, callGetCh = false;
+        if (options.length > 0)
+            callClearScreen = options[0];
+        if (options.length > 1)
+            callGetCh = options[1];
         player.setAwake(true);
-        sendCustomMessage("You are awake now.", false, false);
+        sendCustomMessage("You are awake now.", callClearScreen, callGetCh);
     }
 
     /**
