@@ -109,7 +109,7 @@ public class Player extends Person {
      * @return boolean result
      */
     @SuppressWarnings("SpellCheckingInspection")
-    public boolean checkRole(String role) {
+    public boolean hasRole(String role) {
         role = role.replaceAll(" ", ""); // delete all spaces in the string
         role = role.toLowerCase(); // make it lowercase to make it case insesitive
         //noinspection EnhancedSwitchMigration
@@ -177,7 +177,7 @@ public class Player extends Person {
      * isAwake setter
      * @param awake isAwake new value
      */
-    public void setAwake(boolean awake) {
+    public synchronized void setAwake(boolean awake) {
         isAwake = awake;
     }
 

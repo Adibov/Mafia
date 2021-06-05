@@ -92,7 +92,7 @@ public class PlayerController {
      */
     public void wakeup() {
         player.setAwake(true);
-        sendCustomMessage("You are awake now.", false, true);
+        sendCustomMessage("You are awake now.", false, false);
     }
 
     /**

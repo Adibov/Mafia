@@ -4,7 +4,6 @@ import Roles.*;
 
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.util.ArrayList;
 import java.util.Random;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -47,9 +46,7 @@ public class GameController {
             startPreparationDay();
         if (dayNumber == 1) {
             startIntroductionDay();
-            sleepPlayers();
-            wakeupPerson("Mafia");
-            showAlivePlayersToGroup("Mafia", true, true, false);
+            startFirstNight();
 
         }
     }
@@ -126,6 +123,7 @@ public class GameController {
             playerControllers.remove(player);
             newPlayers.add(newRole);
             playerControllers.put(newRole, playerController);
+            playerController.setPlayer(newRole);
         }
         for (int i = numberOfMafias; i < numberOfPlayers; i++) {
             int citizenIndex = i - numberOfMafias;
@@ -164,6 +162,7 @@ public class GameController {
             playerControllers.remove(player);
             newPlayers.add(newRole);
             playerControllers.put(newRole, playerController);
+            playerController.setPlayer(newRole);
             sleep();
         }
         players = newPlayers;
@@ -205,11 +204,52 @@ public class GameController {
     }
 
     /**
+     * start first night
+     * DESCRIPTION: In this night, players wakeup in turn and
+     */
+    public void startFirstNight() {
+        sleepPlayers();
+        // mafias introduction
+        if (Setting.getNumberOfMafias() > 1) { // make sure there exists at least two mafias in game
+            wakeupGroup("Mafia");
+            sendCustomGroupFilteredMessage("Mafias have woke up.", "Mafia", false, false);
+            showAlivePlayersToGroup("Mafia", true, false, true, true);
+            sleepGroup("Mafia");
+            sendCustomGroupFilteredMessage("Mafias have slept.", "Mafia", false, false);
+        }
+
+        // doctor and mayor introduction
+        if (Setting.getNumberOfPlayers() - Setting.getNumberOfMafias() > 3) { // make sure doctor and mayor are in the game
+            wakeupGroup("Doctor");
+            sendCustomGroupFilteredMessage("Doctor has woke up.", "Doctor", false, false);
+            wakeupGroup("Mayor");
+            sendCustomGroupFilteredMessage("Mayor has woke up.", "Mayor", false, false);
+            AtomicInteger finishedThread = new AtomicInteger(0);
+            playerThreads.execute(() -> {
+                showAlivePlayersToGroup("Doctor", true, false, true, true);
+                finishedThread.incrementAndGet();
+            });
+            playerThreads.execute(() -> {
+                showAlivePlayersToGroup("Mayor", true, false, true, true);
+                finishedThread.incrementAndGet();
+            });
+            while (finishedThread.get() < 2)
+                sleep();
+            sleepGroup("Doctor");
+            sendCustomGroupFilteredMessage("Doctor has slept.", "Doctor", false, false);
+            sleepGroup("Mayor");
+            sendCustomGroupFilteredMessage("Mayor has slept.", "Mayor", false, false);
+        }
+        sendCustomMessageToAll("Night has been finished.");
+        System.out.println("First night has been finished.");
+    }
+
+    /**
      * make all players asleep
      */
     public void sleepPlayers() {
         sendCustomMessageToAll(
-                "It's night now, all players have to sleep. Please wait until night ends.",
+                "You have to sleep now, please wait until god inform you.",
                 false,
                 false
         );
@@ -219,14 +259,38 @@ public class GameController {
     }
 
     /**
+     * sleep players with the given role
+     * @param role given role
+     * @param options waits until all players sleep
+     */
+    public void sleepGroup(String role, boolean... options) {
+        AtomicInteger finishedThread = new AtomicInteger(0);
+        int loopCounter = 0;
+        for (Player player : players) {
+            if (player.hasRole(role))
+                playerThreads.execute(() -> {
+                    sendCustomMessageToPlayer(
+                            "You have to sleep now, please wait until god inform you.",
+                            player,
+                            false, false
+                    );
+                    finishedThread.incrementAndGet();
+                });
+            loopCounter++;
+        }
+        while (options.length > 0 && options[0] && finishedThread.get() < loopCounter)
+            sleep();
+    }
+
+    /**
      * wake a group of players
      * @param role role of the corresponding group
      */
-    public void wakeupPerson(String role) {
+    public void wakeupGroup(String role) {
         AtomicInteger finishedThread = new AtomicInteger(0);
         int threadCount = 0;
         for (Player player : players) {
-            if (player.checkRole(role)) {
+            if (player.hasRole(role)) {
                 PlayerController playerController = playerControllers.get(player);
                 if (playerController == null)
                     continue;
@@ -270,48 +334,53 @@ public class GameController {
      * show alive players to the corresponding player
      * @param targetPlayer target player
      * @param showRoles if true, will also show roles of players in same team
-     * @param callClearScreen if true, calls clear screen method after finishing
-     * @param callGetCh if true, calls getCh method after finishing
+     * @param options call clearScreen, call getCh
      */
-    public void showAlivePlayersToPlayer(Player targetPlayer,
-                                         boolean showRoles,
-                                         boolean callClearScreen,
-                                         boolean callGetCh) {
+    public void showAlivePlayersToPlayer(Player targetPlayer, boolean showRoles, boolean... options) {
         int playerCount = 1;
         StringBuilder message = new StringBuilder();
         for (Player player : players) {
             if (player.equals(targetPlayer)) // doesn't show himself
                 continue;
             message.append(playerCount).append(") ").append(player);
-            if (showRoles && targetPlayer.isInSameTeam(player)) {
+            if (showRoles && targetPlayer.isInSameTeam(player) && player.isAwake()) {
                 String role = player.getClass().toString().split("\\.")[1];
-                message.append("(").append(role).append(")");
+                message.append(" (").append(role).append(")");
             }
             message.append("\n");
             playerCount++;
         }
-        sendCustomMessageToPlayer(message.toString(), targetPlayer, callClearScreen, callGetCh);
+        sendCustomMessageToPlayer(message.toString(), targetPlayer, options);
     }
 
     /**
      * show alive players to a given group of players
      * @param role target players group
      * @param showRoles if true, will also show roles of players
-     * @param callClearScreen if true, calls clear screen method after finishing
-     * @param callGetCh if true, calls getCh method after finishing
+     * @param options call clearScreen, call getCh, wait for all message to be sent
      */
-    public void showAlivePlayersToGroup(String role, boolean showRoles, boolean callClearScreen, boolean callGetCh) {
+    public void showAlivePlayersToGroup(String role, boolean showRoles, boolean... options) {
+        boolean callClearScreen = false, callGetCh = false, waitForResponse = false;
+        if (options.length > 0)
+            callClearScreen = options[0];
+        if (options.length > 1)
+            callGetCh = options[1];
+        if (options.length > 2)
+            waitForResponse = options[2];
         AtomicInteger finishedThread = new AtomicInteger(0);
         int loopCounter = 0;
         for (Player player : players)
-            if (player.checkRole(role)) {
+            if (player.hasRole(role)) {
+                boolean finalCallClearScreen = callClearScreen;
+                boolean finalCallGetCh = callGetCh;
+                boolean finalWaitForResponse = waitForResponse;
                 playerThreads.execute(() -> {
-                    showAlivePlayersToPlayer(player, showRoles, callClearScreen, callGetCh);
+                    showAlivePlayersToPlayer(player, showRoles, finalCallClearScreen, finalCallGetCh, finalWaitForResponse);
                     finishedThread.incrementAndGet();
                 });
                 loopCounter++;
             }
-        while (finishedThread.get() < loopCounter) // wait until all players have received send
+        while (waitForResponse && finishedThread.get() < loopCounter) // wait until all players have received message
             sleep();
     }
 
@@ -322,12 +391,19 @@ public class GameController {
      * @param options call clearScreen, call getCh, wait for client to receive message
      */
     public void sendCustomMessageToPlayer(Message message, Player player, boolean... options) {
+        boolean callClearScreen = false, callGetCh = false;
+        if (options.length > 0)
+            callClearScreen = options[0];
+        if (options.length > 1)
+            callGetCh = options[1];
         PlayerController playerController = playerControllers.get(player);
         if (playerController == null)
             return;
         AtomicBoolean threadFinished = new AtomicBoolean(false); // define atomic to make it usable in lambda
+        boolean finalCallClearScreen = callClearScreen;
+        boolean finalCallGetCh = callGetCh;
         playerThreads.execute(() -> {
-            playerController.sendCustomMessage(message, options[0], options[1]);
+            playerController.sendCustomMessage(message, finalCallClearScreen, finalCallGetCh);
             threadFinished.set(true);
         });
         while (options.length > 2 && options[2] && !threadFinished.get()) // wait until player received message
@@ -345,15 +421,15 @@ public class GameController {
     }
 
     /**
-     * send the given message to players with the corresponding role and call remaining methods.
+     * send the given message to all players, EXCEPT players with the corresponding role and call remaining methods.
      * @param message given message
-     * @param role corresponding role
+     * @param exceptionRole ignored role
      * @param options call clearScreen, call getCh, wait for client to receive message
      */
-    public void sendCustomMessageToGroup(Message message, String role, boolean... options) {
+    public void sendCustomGroupFilteredMessage(Message message, String exceptionRole, boolean... options) {
         AtomicInteger sentMessage = new AtomicInteger(0);
         for (Player player : players) {
-            if (!player.checkRole(role))
+            if (player.hasRole(exceptionRole))
                 continue;
             PlayerController playerController = playerControllers.get(player);
             if (playerController == null)
@@ -371,13 +447,13 @@ public class GameController {
     }
 
     /**
-     * send the given text to players with the corresponding role and call remaining methods.
+     * send the given text to all players, EXCEPT players with the corresponding role and call remaining methods.
      * @param bodyMessage given text
-     * @param role corresponding role
+     * @param exceptionRole ignored role
      * @param options call clearScreen, call getCh, wait for client to receive message
      */
-    public void sendCustomMessageToGroup(String bodyMessage, String role, boolean... options) {
-        sendCustomMessageToGroup(new Message(bodyMessage, God.getInstance()), role, options);
+    public void sendCustomGroupFilteredMessage(String bodyMessage, String exceptionRole, boolean... options) {
+        sendCustomGroupFilteredMessage(new Message(bodyMessage, God.getInstance()), exceptionRole, options);
     }
 
     /**
@@ -386,17 +462,24 @@ public class GameController {
      * @param options call clearScreen, call getCh, wait for client to receive message
      */
     public void sendCustomMessageToAll(Message message, boolean... options) {
+        boolean callClearScreen = false, callGetCh = false;
+        if (options.length > 0)
+            callClearScreen = options[0];
+        if (options.length > 1)
+            callGetCh = options[1];
         AtomicInteger sentMessage = new AtomicInteger(0);
         for (Player player : players) {
-            if (player.equals(message.getSender()) || !player.isAwake()) {
+            if (player.equals(message.getSender())) {
                 sentMessage.incrementAndGet();
                 continue;
             }
             PlayerController playerController = playerControllers.get(player);
             if (playerController == null)
                 return;
+            boolean finalCallClearScreen = callClearScreen;
+            boolean finalCallGetCh = callGetCh;
             playerThreads.execute(() -> {
-                playerController.sendCustomMessage(message, options[0], options[1]);
+                playerController.sendCustomMessage(message, finalCallClearScreen, finalCallGetCh);
                 sentMessage.incrementAndGet();
             });
         }
