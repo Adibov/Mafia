@@ -54,6 +54,10 @@ public class Client extends Thread {
             try {
                 if (socket.getInputStream().available() > 0) {
                     newMessage = (Message) objectInputStream.readObject();
+                    if (newMessage.getBody().equals("EXIT") && newMessage.getSender().getUsername().equals("God")) {
+                        socket.close();
+                        System.exit(0);
+                    }
                     player.showMessage(newMessage);
                 }
                 //noinspection BusyWait

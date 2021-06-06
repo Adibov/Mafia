@@ -111,6 +111,38 @@ public class PlayerController {
     }
 
     /**
+     * get vote among the given number of candidates
+     * @param numberOfCandidates number of candidates
+     * @param finishingTime deadline time
+     * @return final vote
+     */
+    public int vote(int numberOfCandidates, LocalTime finishingTime) {
+        sendMessage("Enter your vote:");
+        int result = 0;
+        while (true) {
+            if (LocalTime.now().compareTo(finishingTime) >= 0)
+                break;
+            if (clientHandler.isStreamEmpty())
+                continue;
+            Message receivedMessage = getMessage();
+            String vote = receivedMessage.getBody();
+            if (vote.equals("end"))
+                break;
+            try {
+                int tmp = Integer.parseInt(vote);
+                if (0 <= tmp && tmp <= numberOfCandidates)
+                    result = tmp;
+                else
+                    sendMessage("Invalid input.");
+            }
+            catch (Exception exception) {
+                exception.printStackTrace();
+            }
+        }
+        return result;
+    }
+
+    /**
      * clear screen for the player
      */
     private void clearScreen() {

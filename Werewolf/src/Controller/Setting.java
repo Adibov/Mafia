@@ -18,7 +18,9 @@ public class Setting {
     // how much time does a player can make his turn in night
     final static private LocalTime nighActionTime = LocalTime.of(0, 0, 30);
     // how much time do players can talk in a regular discussion phase
-    final static private LocalTime discussionPhaseTime = LocalTime.of(0, 5, 0);
+    final static private LocalTime discussionPhaseTime = LocalTime.of(0, 0, 1);
+    // how much time does a player have to vote in voting phase
+    final static private LocalTime votingTime = LocalTime.of(0, 5, 30);
 
     ///////////////// server setting \\\\\\\\\\\\\\\\\\\\
     // sleep time in milliseconds
@@ -80,5 +82,13 @@ public class Setting {
      */
     public static LocalTime getDiscussionPhaseTime() {
         return discussionPhaseTime;
+    }
+
+    /**
+     * votingTime getter
+     * @return votingTime
+     */
+    public static LocalTime getVotingTime() {
+        return votingTime;
     }
 }

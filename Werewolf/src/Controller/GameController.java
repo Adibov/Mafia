@@ -3,9 +3,12 @@ package Controller;
 import Roles.*;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.net.ServerSocket;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -98,6 +101,7 @@ public class GameController {
 
     /**
      * distribute roles randomly
+     * DESCRIPTION: god distribute roles, based on the number of players/mafias
      */
     public void distributeRoles() {
         System.out.println("Starting to distribute roles.");
@@ -190,6 +194,7 @@ public class GameController {
 
     /**
      * start introduction day.
+     * DESCRIPTION: in this day, players talk in turn and introduce themself to the other players.
      */
     public void startIntroductionDay() {
         sendCustomMessageToAll("Introduction day started. Each player can speak for "
@@ -208,7 +213,7 @@ public class GameController {
 
     /**
      * start first night
-     * DESCRIPTION: In this night, players wakeup in turn and
+     * DESCRIPTION: In this night, players wakeup in turn and get to know each other
      */
     public void startFirstNight() {
         sleepPlayers();
@@ -223,23 +228,12 @@ public class GameController {
 
         // doctor and mayor introduction
         if (Setting.getNumberOfPlayers() - Setting.getNumberOfMafias() > 3) { // make sure doctor and mayor are in the game
-            wakeupGroup("Doctor");
-            sendCustomGroupFilteredMessage("Doctor has woke up.", "Doctor", false, false);
+            Player doctor = getPlayerByRole("Doctor");
+            doctor.setAwake(true); // to make it visible for mayor
             wakeupGroup("Mayor");
             sendCustomGroupFilteredMessage("Mayor has woke up.", "Mayor", false, false);
-            AtomicInteger finishedThread = new AtomicInteger(0);
-            playerThreads.execute(() -> {
-                showAlivePlayersToGroup("Doctor", true, false, true, true);
-                finishedThread.incrementAndGet();
-            });
-            playerThreads.execute(() -> {
-                showAlivePlayersToGroup("Mayor", true, false, true, true);
-                finishedThread.incrementAndGet();
-            });
-            while (finishedThread.get() < 2)
-                sleep();
-            sleepGroup("Doctor");
-            sendCustomGroupFilteredMessage("Doctor has slept.", "Doctor", false, false);
+            showAlivePlayersToGroup("Mayor", true, false, true, true);
+            doctor.setAwake(false);
             sleepGroup("Mayor");
             sendCustomGroupFilteredMessage("Mayor has slept.", "Mayor", false, false);
         }
@@ -249,22 +243,19 @@ public class GameController {
     }
 
     /**
-     * start a regular day of the game in this order:
+     * start a regular day of the game
+     * PHASES:
      * 1. wakeup all players
      * 2. report last night events
-     * 3. let them speak in turn
-     * 4. hold a voting for kicking players
+     * 3. let them discuss about themself/events
+     * 4. hold a voting for kicking a player
      */
     public void startRegularDay() {
         wakeupGroup("All", true, false, true);
         reportLastNightEvents();
         showAlivePlayersToGroup("All", false, false, false, true);
-        sendCustomMessageToAll(
-                "Discussion phase started, all players can speak for " +
-                Setting.getDiscussionPhaseTime().getMinute() +
-                " minutes. send 'end' word to finish speaking.",
-                false, false, true);
         startChatroom();
+        holdVoting();
     }
 
     /**
@@ -276,25 +267,103 @@ public class GameController {
 
     /**
      * start chatroom, so players can talk to each other
+     * DESCRIPTION: all players will wakeup and discuss to each other.
      */
     public void startChatroom() {
+        sendCustomMessageToAll(
+                "Discussion phase started, all players can speak for " +
+                        Setting.getDiscussionPhaseTime().getMinute() +
+                        " minutes. send 'end' word to finish speaking.",
+                false, false, true);
         LocalTime startingTime = LocalTime.now();
         int loopCounter = 0;
         AtomicInteger finishedThread = new AtomicInteger(0);
-        for (Player player : players)
-            if (player.isAlive()) {
-                PlayerController playerController = playerControllers.get(player);
-                if (playerController == null)
-                    continue;
-                playerThreads.execute(() -> {
-                    playerController.talk(startingTime, Setting.getDiscussionPhaseTime());
-                    finishedThread.incrementAndGet();
-                });
-                loopCounter++;
-            }
+        for (Player player : players) {
+            PlayerController playerController = playerControllers.get(player);
+            if (playerController == null)
+                continue;
+            playerThreads.execute(() -> {
+                playerController.talk(startingTime, Setting.getDiscussionPhaseTime());
+                finishedThread.incrementAndGet();
+            });
+            loopCounter++;
+        }
         while (finishedThread.get() < loopCounter)
             sleep();
         sendCustomMessageToAll("Discussion time finished.", true, true, true);
+    }
+
+    /**
+     * hold a voting for kicking a player
+     * PHASES:
+     * 1. show alive players to every player
+     * 2. let them choose no more than one player
+     * 3. ask from mayor to make voting invalid or not
+     * 4. report the result of the voting to the players
+     */
+    public void holdVoting() {
+        System.out.println("Start voting.");
+        // how many players have voted to the target player
+        ConcurrentHashMap<Player, Integer> voteCount = new ConcurrentHashMap<>();
+        LocalTime startingTime = LocalTime.now();
+        int loopCount = 0;
+        AtomicInteger finishedThread = new AtomicInteger(0);
+        for (Player player : players)
+            if (player.isAlive()) {
+                playerThreads.execute(() -> {
+                    Player votedPlayer = getVote(player, startingTime);
+                    if (votedPlayer != null) {
+                        if (!voteCount.containsKey(votedPlayer))
+                            voteCount.put(votedPlayer, 1);
+                        else {
+                            int count = voteCount.get(votedPlayer) + 1;
+                            voteCount.remove(votedPlayer);
+                            voteCount.put(votedPlayer, count);
+                        }
+                    }
+                    finishedThread.incrementAndGet();
+                });
+                loopCount++;
+            }
+        while (finishedThread.get() < loopCount) // waits until all players have voted
+            sleep();
+    }
+
+    /**
+     * get vote of the given player
+     * @param voterPlayer given player
+     * @return voted player
+     */
+    public Player getVote(Player voterPlayer, LocalTime startingTime) {
+        ArrayList<Player> candidatePlayers = new ArrayList<>();
+        for (Player player : players) {
+            if (player.equals(voterPlayer) || !player.isAlive())
+                continue;
+            candidatePlayers.add(player);
+        }
+        sendCustomMessageToPlayer(
+                "Voting phase started, you can vote for " + Setting.getVotingTime().toSecondOfDay() +
+                        " seconds. Send '0' for settle on abstention and 'end' to make your vote finalize.",
+                        voterPlayer,
+                true, false, true);
+        showAlivePlayersToPlayer(voterPlayer, false, false, false, true);
+        PlayerController playerController = playerControllers.get(voterPlayer);
+        if (playerController == null)
+            return null;
+        LocalTime finishingTime = startingTime.plusSeconds(Setting.getVotingTime().toSecondOfDay());
+        int voteIndex = playerController.vote(candidatePlayers.size(), finishingTime);
+        if (voteIndex == 0) {
+            Message message = new Message("I've settled on abstention.", voterPlayer);
+            sendCustomMessageToPlayer("You have settled on abstention.", voterPlayer, false, true, true);
+            sendCustomMessageToAll(message, false, false, true);
+            return null;
+        }
+
+        Player votedPlayer = candidatePlayers.get(voteIndex - 1);
+        Message message = new Message("I've voted for " + votedPlayer + ".", voterPlayer);
+        sendCustomMessageToPlayer("You have voted for " + votedPlayer + ".", voterPlayer, false, true, true);
+        sendCustomMessageToAll(message, false, false, true);
+        return votedPlayer;
     }
 
     /**
@@ -371,7 +440,7 @@ public class GameController {
         for (Player player : players)
             if (player.getUsername().equals(username))
                 return false;
-        return true;
+        return !username.equals("God");
     }
 
     /**
@@ -409,6 +478,7 @@ public class GameController {
             return;
         players.remove(player);
         playerControllers.remove(player);
+        sendCustomMessageToPlayer("EXIT", player, false, false);
         sendCustomMessageToAll("\n" + player + " has been kicked out/disconnected from game.\n", false, false);
     }
 
@@ -423,7 +493,7 @@ public class GameController {
         StringBuilder message = new StringBuilder();
         message.append("Alive players:\n");
         for (Player player : players) {
-            if (player.equals(targetPlayer)) // doesn't show himself
+            if (player.equals(targetPlayer) || !player.isAlive()) // doesn't show himself or dead players
                 continue;
             message.append(playerCount).append(") ").append(player);
             if (showRoles && targetPlayer.isInSameTeam(player) && player.isAwake()) {
@@ -579,6 +649,19 @@ public class GameController {
      */
     public void sendCustomMessageToAll(String bodyMessage, boolean... options) {
         sendCustomMessageToAll(new Message(bodyMessage, God.getInstance(), daytime), options);
+    }
+
+    /**
+     * get player with the given role among those who are alive
+     * @param role given role
+     * @return corresponding player
+     */
+    public Player getPlayerByRole(String role) {
+        Player resultPlayer = null;
+        for (Player player : players)
+            if (player.hasRole(role))
+                resultPlayer = player;
+        return resultPlayer;
     }
 
     /**
