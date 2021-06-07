@@ -10,7 +10,7 @@ import java.time.LocalTime;
 public class Setting {
     //////////// gameplay setting \\\\\\\\\\\\\\\\\
     // total number of players
-    final static private int numberOfPlayers = 3;
+    final static private int numberOfPlayers = 6;
     // total number of mafias
     final static private int numberOfMafias = (numberOfPlayers + 1) / 3;
     // how much time does a player can talk in an introduction phase
