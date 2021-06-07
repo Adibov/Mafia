@@ -50,9 +50,9 @@ public class ClientHandler {
      */
     public synchronized Message getMessage() {
         Message receivedMessage = null;
-        if (isSocketClosed())
-            return null;
         while (true) {
+            if (isSocketClosed())
+                return null;
             try {
                 receivedMessage = (Message) objectInputStream.readObject();
                 break;

@@ -385,12 +385,15 @@ public class GameController {
             }
         }
         int num = 1;
-        StringBuilder result = new StringBuilder("Ranking:\n").append("    Vote Count                    Record Count\n");
+        StringBuilder result = new StringBuilder("Ranking:\n").append(" ".repeat(15))
+                .append("Vote Count").append(" ".repeat(15)).append("Record Count\n");
         for (Player player : ranking) {
-            result.append("#").append(num).append(" ").append(player).append("\n");
+            int spaceCount = 12 - player.getUsername().length() + 4;
+            result.append("#").append(num).append(" ").append(player).append(" ".repeat(spaceCount)).append(voteCount.get(player))
+                    .append(" ".repeat(25)).append(player.getRecordCount()).append("\n");
             num++;
         }
-        sendCustomMessageToAll(result.toString(), true, false, true);
+        sendCustomMessageToAll(result.toString(), true, true, true);
         return ranking;
     }
 
@@ -420,7 +423,7 @@ public class GameController {
             }
         }
         if (maximumCount > 1) {
-            sendCustomMessageToAll("No one will die this turn.", false, true, true);
+            sendCustomMessageToAll("No one will die this turn.", true, true, true);
             return;
         }
         if (resultPlayer == null)
@@ -434,8 +437,11 @@ public class GameController {
      */
     public void killPlayer(Player deadPlayer) {
         deadPlayer.setAlive(false);
-        String message = "You have died. Please choose one option:\n" + "1) leave game\n" + "2) watch game till the end";
-        sendCustomMessageToPlayer(message, deadPlayer, true, false, false);
+        String message = """
+                You have died. Please choose one option:
+                1) watch game till the end
+                2) leave game""";
+        sendCustomMessageToPlayer(message, deadPlayer, true, false, true);
         while (true) {
             int option = Integer.parseInt(getMessageFromPlayer(deadPlayer).getBody());
             if (option < 1 || option > 2) {
@@ -448,7 +454,7 @@ public class GameController {
             }
             break;
         }
-        sendCustomMessageToAll(deadPlayer + "has died.", false, true, true);
+        sendCustomMessageToAll(deadPlayer + " has died.", false, true, true);
     }
 
     /**
@@ -561,10 +567,11 @@ public class GameController {
     public void kickPlayer(Player player) {
         if (player == null)
             return;
+        // **do not change the order of the following 4 lines, unless program will raise runtime error.**
+        sendCustomMessageToPlayer("EXIT", player, false, false, true);
         players.remove(player);
         playerControllers.remove(player);
-        sendCustomMessageToPlayer("EXIT", player, false, false);
-        sendCustomMessageToAll("\n" + player + " has been kicked out/disconnected from game.\n", false, false);
+        sendCustomMessageToAll("\n" + player + " has been kicked out/disconnected from the game.\n", true, true, true);
     }
 
     /**
@@ -705,10 +712,11 @@ public class GameController {
             callClearScreen = options[0];
         if (options.length > 1)
             callGetCh = options[1];
-        AtomicInteger sentMessage = new AtomicInteger(0);
+        AtomicInteger finishedThread = new AtomicInteger(0);
+        int loopCounter = 0;
         for (Player player : players) {
             if (player.equals(message.getSender())) {
-                sentMessage.incrementAndGet();
+                finishedThread.incrementAndGet();
                 continue;
             }
             PlayerController playerController = playerControllers.get(player);
@@ -718,12 +726,13 @@ public class GameController {
             boolean finalCallGetCh = callGetCh;
             playerThreads.execute(() -> {
                 playerController.sendCustomMessage(message, finalCallClearScreen, finalCallGetCh);
-                sentMessage.incrementAndGet();
+                finishedThread.incrementAndGet();
             });
+            loopCounter++;
         }
         while (options.length > 2 &&
                 options[2] &&
-                sentMessage.get() < players.size()) // to make sure that all players have received sent message
+                finishedThread.get() < loopCounter) // to make sure that all players have received sent message
             sleep();
     }
 
@@ -745,15 +754,7 @@ public class GameController {
         PlayerController playerController = playerControllers.get(player);
         if (playerController == null)
             return null;
-        final Message[] message = new Message[1]; // define as an array to make it usable in following lambda function
-        AtomicBoolean threadFinished = new AtomicBoolean(false);
-        playerThreads.execute(() -> {
-            message[0] = playerController.getMessage();
-            threadFinished.set(true);
-        });
-        while (!threadFinished.get())
-            sleep();
-        return message[0];
+        return playerController.getMessage();
     }
 
     /**

@@ -57,7 +57,7 @@ public class Player extends Person {
     public void joinGame() {
         connectToGame();
         client.start();
-        while (true) {
+        while (client.isServerUp()) {
             String message = inputScanner.nextLine();
             client.sendMessage(new Message(message, this));
             if (message.equals("exit")) {
@@ -65,6 +65,7 @@ public class Player extends Person {
                 break;
             }
         }
+        client.closeSocket();
     }
 
     /**

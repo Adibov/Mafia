@@ -24,7 +24,7 @@ public class Setting {
 
     ///////////////// server setting \\\\\\\\\\\\\\\\\\\\
     // sleep time in milliseconds
-    final static private int sleepTime = 200;
+    final static private int sleepTime = 50;
     // how many blank lines to printed in clearScreen method
     final static private int clearScreenBlankLines = 50;
 

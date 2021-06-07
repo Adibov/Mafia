@@ -55,8 +55,9 @@ public class Client extends Thread {
                 if (socket.getInputStream().available() > 0) {
                     newMessage = (Message) objectInputStream.readObject();
                     if (newMessage.getBody().equals("EXIT") && newMessage.getSender().getUsername().equals("God")) {
-                        socket.close();
-                        System.exit(0);
+                        isServerUp.set(false);
+                        System.out.println("Press Enter to continue...");
+                        break;
                     }
                     player.showMessage(newMessage);
                 }
@@ -67,6 +68,27 @@ public class Client extends Thread {
                 exception.printStackTrace();
             }
         }
+    }
+
+    /**
+     * close socket
+     */
+    public void closeSocket() {
+        if (socket.isClosed())
+            return;
+        try {
+            socket.close();
+        } catch (IOException exception) {
+            exception.printStackTrace();
+        }
+    }
+
+    /**
+     * isServerUp getter
+     * @return boolean result
+     */
+    public boolean isServerUp() {
+        return isServerUp.get();
     }
 
     /**
@@ -82,6 +104,8 @@ public class Client extends Thread {
      * @param message given message
      */
     public void sendMessage(Message message) {
+        if (!isServerUp.get() || socket.isClosed())
+            return;
         try {
             objectOutputStream.writeObject(message);
         }
