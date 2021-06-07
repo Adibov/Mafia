@@ -26,4 +26,12 @@ public class DoctorLecter extends Mafia {
     public boolean hasHealedHimself() {
         return hasHealedHimself;
     }
+
+    /**
+     * hasHealedHimself setter
+     * @param hasHealedHimself hasHealedHimself new value
+     */
+    public void setHasHealedHimself(boolean hasHealedHimself) {
+        this.hasHealedHimself = hasHealedHimself;
+    }
 }

@@ -485,8 +485,7 @@ public class GameController {
     public void startRegularNight() {
         sleepGroup("All", true, false, true);
         Player mafiasTarget = startMafiasTurn();
-        Player doctorTarget = startDoctorLecterTurn();
-        System.out.println(mafiasTarget + "\n" + doctorTarget);
+        Player doctorLecterTarget = startDoctorLecterTurn();
     }
 
     /**
@@ -545,6 +544,8 @@ public class GameController {
         survivedPlayer = getVote(doctorLecter, finishingTime, "Mafia", "Mafia", !doctorLecter.hasHealedHimself());
         sleepGroup("DoctorLecter", true, false, true);
         sendCustomGroupFilteredMessage("Doctor Lecter is asleep now.", "DoctorLecter", false, false, true);
+        if (survivedPlayer.equals(doctorLecter))
+            doctorLecter.setHasHealedHimself(true);
         return survivedPlayer;
     }
 
