@@ -136,7 +136,7 @@ public class PlayerController {
                     sendMessage("Invalid input.");
             }
             catch (NumberFormatException exception) {
-                exception.printStackTrace();
+//                exception.printStackTrace();
             }
         }
         return result;

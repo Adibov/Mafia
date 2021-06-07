@@ -10,7 +10,6 @@ import java.util.Random;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * GameController class, controls the game, like accepting new players, sending messages to all players
@@ -53,6 +52,7 @@ public class GameController {
         }
         while (!isGameFinished()) {
             startRegularDay();
+            startRegularNight();
         }
         finishGame();
     }
@@ -303,6 +303,10 @@ public class GameController {
      */
     public void holdVoting() {
         System.out.println("Start voting.");
+        sendCustomMessageToAll(
+                "Voting phase started, you can vote for " + Setting.getVotingTime().toSecondOfDay() +
+                        " seconds. Send '0' for settle on abstention and 'end' to make your vote finalize.",
+                true, false, true);
         // how many players have voted to the target player
         ConcurrentHashMap<Player, Integer> voteCount = new ConcurrentHashMap<>();
         LocalTime startingTime = LocalTime.now();
@@ -311,7 +315,7 @@ public class GameController {
         for (Player player : players)
             if (player.isAlive()) {
                 playerThreads.execute(() -> {
-                    Player votedPlayer = getVote(player, startingTime);
+                    Player votedPlayer = getVote(player, startingTime.plusSeconds(Setting.getVotingTime().toSecondOfDay()));
                     if (votedPlayer != null) {
                         if (!voteCount.containsKey(votedPlayer))
                             voteCount.put(votedPlayer, 1);
@@ -327,33 +331,32 @@ public class GameController {
             }
         while (finishedThread.get() < loopCount) // waits until all players have voted
             sleep();
-        ArrayList<Player> ranking = showStanding(voteCount);
-        killPlayerByRanking(ranking, voteCount);
+        if (voteCount.keySet().size() == 0)
+            sendCustomMessageToAll("No one will die this turn.", true, true, true);
+        else {
+            ArrayList<Player> ranking = showStanding(voteCount);
+            killPlayerByRanking(ranking, voteCount);
+        }
         System.out.println("Finished voting.");
     }
 
     /**
-     * get vote of the given player
+     * get a vote of the given player
      * @param voterPlayer given player
+     * @param finishingTime voting deadline
      * @return voted player
      */
-    public Player getVote(Player voterPlayer, LocalTime startingTime) {
+    public Player getVote(Player voterPlayer, LocalTime finishingTime) {
         ArrayList<Player> candidatePlayers = new ArrayList<>();
         for (Player player : players) {
             if (player.equals(voterPlayer) || !player.isAlive())
                 continue;
             candidatePlayers.add(player);
         }
-        sendCustomMessageToPlayer(
-                "Voting phase started, you can vote for " + Setting.getVotingTime().toSecondOfDay() +
-                        " seconds. Send '0' for settle on abstention and 'end' to make your vote finalize.",
-                        voterPlayer,
-                true, false, true);
         showAlivePlayersToPlayer(voterPlayer, false, false, false, true);
         PlayerController playerController = playerControllers.get(voterPlayer);
         if (playerController == null)
             return null;
-        LocalTime finishingTime = startingTime.plusSeconds(Setting.getVotingTime().toSecondOfDay());
         int voteIndex = playerController.vote(candidatePlayers.size(), finishingTime);
         if (voteIndex == 0) {
             Message message = new Message("I've settled on abstention.", voterPlayer);
@@ -456,6 +459,58 @@ public class GameController {
             break;
         }
         sendCustomMessageToAll(deadPlayer + " has died.", false, true, true);
+    }
+
+    /**
+     * start a regular day of the game
+     * PHASES:
+     * 1. sleep all players
+     * 2. wakeup mafias and let them kill one person
+     * 3. wakeup doctor lecter and let him survive a mafia
+     * 4. wakeup citizen's doctor and let him survive a citizen
+     * 5. wakeup detector and let him inquire a mafia
+     * 5. wakeup sniper and ask him whether he wants to shoot or not
+     * 6. wakeup psychologist and let him make someone silent
+     * 7. wakeup diehard and ask him whether he wants god to announce status of the game
+     */
+    public void startRegularNight() {
+        sleepGroup("All", true, false, true);
+        Player mafiasTarget = startMafiasTurn();
+        System.out.println(mafiasTarget);
+    }
+
+    /**
+     * start mafias turn and let them choose one player to kill
+     * @return target player
+     */
+    public Player startMafiasTurn() {
+        wakeupGroup("Mafia", true, false, true);
+        sendCustomMessageToAll("Choose a person to kill:", false, false, true);
+        // maps each mafia to the player which he voted for
+        LocalTime finishingTime = LocalTime.now().plusSeconds(Setting.getNighActionTime().toSecondOfDay());
+        ConcurrentHashMap<Player, Player> voteMap = new ConcurrentHashMap<>();
+        AtomicInteger finishedThread = new AtomicInteger(0);
+        int loopCounter = 0;
+        for (Player player : players)
+            if (player.hasRole("Mafia")) {
+                playerThreads.execute(() -> {
+                    Player votedPlayer = getVote(player, finishingTime);
+                    if (votedPlayer != null)
+                        voteMap.put(player, votedPlayer);
+                    finishedThread.incrementAndGet();
+                });
+                loopCounter++;
+            }
+        while (finishedThread.get() < loopCounter)
+            sleep();
+        Player godFather = getPlayerByRole("GodFather"), doctorLecter = getPlayerByRole("DoctorLecter");
+        if (godFather != null)
+            return voteMap.get(godFather);
+        if (doctorLecter != null)
+            return voteMap.get(doctorLecter);
+        for (Player player : voteMap.values())
+            return player;
+        return null;
     }
 
     /**
