@@ -54,6 +54,7 @@ public class GameController {
         while (!isGameFinished()) {
             startRegularDay();
         }
+        finishGame();
     }
 
     /**
@@ -455,6 +456,26 @@ public class GameController {
             break;
         }
         sendCustomMessageToAll(deadPlayer + " has died.", false, true, true);
+    }
+
+    /**
+     * finish game and report winners
+     */
+    public void finishGame() {
+        int numberOfMafias = 0, numberOfCitizens = 0;
+        for (Player player : players)
+            if (player.isAlive()) {
+                if (player.hasRole("Mafia"))
+                    numberOfMafias++;
+                else
+                    numberOfCitizens++;
+            }
+        if (numberOfCitizens == numberOfMafias)
+            sendCustomMessageToAll("Congratulations to citizens. They have won the game.", true, false, true);
+        else
+            sendCustomMessageToAll("Congratulations to mafias. They have won the game.", true, false, true);
+        for (Player player : players)
+            sendCustomMessageToPlayer("EXIT", player, false, false, true);
     }
 
     /**
