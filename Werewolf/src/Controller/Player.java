@@ -19,6 +19,7 @@ public class Player extends Person {
     final transient private Scanner inputScanner = new Scanner(System.in);
     private boolean isAlive;
     private boolean isAwake;
+    private int recordCount;
 
     /**
      * class constructor, for making a player with no username
@@ -27,6 +28,7 @@ public class Player extends Person {
         super("");
         isAlive = true;
         isAwake = true;
+        recordCount = 0;
     }
 
     /**
@@ -37,6 +39,7 @@ public class Player extends Person {
         super(username);
         isAlive = true;
         isAwake = true;
+        recordCount = 0;
     }
 
     /**
@@ -174,6 +177,14 @@ public class Player extends Person {
     }
 
     /**
+     * recordCount getter
+     * @return recordCount
+     */
+    public int getRecordCount() {
+        return recordCount;
+    }
+
+    /**
      * isAwake setter
      * @param awake isAwake new value
      */
@@ -187,6 +198,13 @@ public class Player extends Person {
      */
     public void setAlive(boolean alive) {
         isAlive = alive;
+    }
+
+    /**
+     * increment record count by one
+     */
+    public void incrementRecordCount() {
+        recordCount++;
     }
 
     /**

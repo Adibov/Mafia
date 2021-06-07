@@ -3,15 +3,14 @@ package Controller;
 import Roles.*;
 
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.net.ServerSocket;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Random;
-import java.util.Set;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * GameController class, controls the game, like accepting new players, sending messages to all players
@@ -327,6 +326,9 @@ public class GameController {
             }
         while (finishedThread.get() < loopCount) // waits until all players have voted
             sleep();
+        ArrayList<Player> ranking = showStanding(voteCount);
+        killPlayerByRanking(ranking, voteCount);
+        System.out.println("Finished voting.");
     }
 
     /**
@@ -364,6 +366,89 @@ public class GameController {
         sendCustomMessageToPlayer("You have voted for " + votedPlayer + ".", voterPlayer, false, true, true);
         sendCustomMessageToAll(message, false, false, true);
         return votedPlayer;
+    }
+
+    /**
+     * show vote standing and return ranking list
+     * @param voteCount a hashmap that maps players to the number of votes
+     * @return ranking list ordered by voting count in decreasing
+     */
+    public ArrayList<Player> showStanding(ConcurrentHashMap<Player, Integer> voteCount) {
+        ArrayList<Player> ranking = new ArrayList<>();
+        for (Player player : voteCount.keySet()) {
+            ranking.add(player);
+            int index = ranking.size() - 1;
+            while (index > 0 && voteCount.get(ranking.get(index - 1)) < voteCount.get(ranking.get(index))) {
+                Player tmp = ranking.get(index);
+                ranking.set(index, ranking.get(index - 1));
+                ranking.set(index - 1, tmp);
+            }
+        }
+        int num = 1;
+        StringBuilder result = new StringBuilder("Ranking:\n").append("    Vote Count                    Record Count\n");
+        for (Player player : ranking) {
+            result.append("#").append(num).append(" ").append(player).append("\n");
+            num++;
+        }
+        sendCustomMessageToAll(result.toString(), true, false, true);
+        return ranking;
+    }
+
+    /**
+     * kill players by the given ranking.
+     * ATTENTION: among those players with the most voting count, player with the most record count will die. if
+     * at least two of those players have the same record count, NO ONE WILL DIE THIS TURN. And record count of those
+     * players who reached among the candidates will also increment by one.
+     * @param ranking ranking list ordered by voting count
+     * @param voteCount maps each player to his vote count
+     */
+    public void killPlayerByRanking(ArrayList<Player> ranking, ConcurrentHashMap<Player, Integer> voteCount) {
+        int index = 1, maximumRecordCount = ranking.get(0).getRecordCount();
+        while (index < ranking.size() && voteCount.get(ranking.get(index)).equals(voteCount.get(ranking.get(0)))) {
+            int recordCount = ranking.get(index).getRecordCount();
+            maximumRecordCount = Math.max(recordCount, maximumRecordCount);
+            index++;
+        }
+
+        Player resultPlayer = ranking.get(0);
+        int maximumCount = 0;
+        for (int i = 0; i < index; i++) {
+            ranking.get(i).incrementRecordCount();
+            if (ranking.get(i).getRecordCount() == maximumRecordCount) {
+                resultPlayer = ranking.get(i);
+                maximumCount++;
+            }
+        }
+        if (maximumCount > 1) {
+            sendCustomMessageToAll("No one will die this turn.", false, true, true);
+            return;
+        }
+        if (resultPlayer == null)
+            return;
+        killPlayer(resultPlayer);
+    }
+
+    /**
+     * kill the given player. Indeed, player can choose to leave game (kick out of it) or continue watching it.
+     * @param deadPlayer given player
+     */
+    public void killPlayer(Player deadPlayer) {
+        deadPlayer.setAlive(false);
+        String message = "You have died. Please choose one option:\n" + "1) leave game\n" + "2) watch game till the end";
+        sendCustomMessageToPlayer(message, deadPlayer, true, false, false);
+        while (true) {
+            int option = Integer.parseInt(getMessageFromPlayer(deadPlayer).getBody());
+            if (option < 1 || option > 2) {
+                sendCustomMessageToPlayer("Invalid input.", deadPlayer, false, false, true);
+                continue;
+            }
+            if (option == 2) {
+                kickPlayer(deadPlayer);
+                return;
+            }
+            break;
+        }
+        sendCustomMessageToAll(deadPlayer + "has died.", false, true, true);
     }
 
     /**
@@ -649,6 +734,26 @@ public class GameController {
      */
     public void sendCustomMessageToAll(String bodyMessage, boolean... options) {
         sendCustomMessageToAll(new Message(bodyMessage, God.getInstance(), daytime), options);
+    }
+
+    /**
+     * get a message from the given player
+     * @param player given player
+     * @return received message
+     */
+    public Message getMessageFromPlayer(Player player) {
+        PlayerController playerController = playerControllers.get(player);
+        if (playerController == null)
+            return null;
+        final Message[] message = new Message[1]; // define as an array to make it usable in following lambda function
+        AtomicBoolean threadFinished = new AtomicBoolean(false);
+        playerThreads.execute(() -> {
+            message[0] = playerController.getMessage();
+            threadFinished.set(true);
+        });
+        while (!threadFinished.get())
+            sleep();
+        return message[0];
     }
 
     /**
