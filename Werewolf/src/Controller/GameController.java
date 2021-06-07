@@ -52,6 +52,8 @@ public class GameController {
         }
         while (!isGameFinished()) {
             startRegularDay();
+            if (isGameFinished())
+                break;
             startRegularNight();
         }
         finishGame();
@@ -485,7 +487,11 @@ public class GameController {
     public void startRegularNight() {
         sleepGroup("All", true, false, true);
         Player mafiasTarget = startMafiasTurn();
-        Player doctorLecterTarget = startDoctorLecterTurn();
+        Player doctorLecterTarget = null;
+        if (Setting.getNumberOfMafias() > 1) // make sure doctor lecter exists in game
+            doctorLecterTarget = startDoctorLecterTurn();
+        Player doctorTarget = startDoctorTurn();
+        startDetectorTurn();
     }
 
     /**
@@ -513,6 +519,7 @@ public class GameController {
             }
         while (finishedThread.get() < loopCounter)
             sleep();
+
         sleepGroup("Mafia", true, false, true);
         sendCustomGroupFilteredMessage("Mafias are asleep now.", "Mafia", false, false, true);
         Player godFather = getPlayerByRole("GodFather"), doctorLecter = getPlayerByRole("DoctorLecter");
@@ -533,20 +540,69 @@ public class GameController {
         sendCustomGroupFilteredMessage("Doctor Lecter is awake now.", "DoctorLecter", false, false, true);
         wakeupGroup("DoctorLecter", true, false, true);
         DoctorLecter doctorLecter = (DoctorLecter) getPlayerByRole("DoctorLecter");
-        if (doctorLecter == null) {
+        if (doctorLecter == null || !doctorLecter.isAlive()) {
             sleepGroup("DoctorLecter", true, false, true);
             sendCustomGroupFilteredMessage("Doctor Lecter is asleep now.", "DoctorLecter", false, false, true);
             return null;
         }
+
         sendCustomMessageToPlayer("Choose a mafia to survive:", doctorLecter, false, false, true);
         Player survivedPlayer = null;
         LocalTime finishingTime = LocalTime.now().plusSeconds(Setting.getNighActionTime().toSecondOfDay());
         survivedPlayer = getVote(doctorLecter, finishingTime, "Mafia", "Mafia", !doctorLecter.hasHealedHimself());
         sleepGroup("DoctorLecter", true, false, true);
         sendCustomGroupFilteredMessage("Doctor Lecter is asleep now.", "DoctorLecter", false, false, true);
-        if (survivedPlayer.equals(doctorLecter))
+        if (survivedPlayer != null && survivedPlayer.equals(doctorLecter))
             doctorLecter.setHasHealedHimself(true);
         return survivedPlayer;
+    }
+
+    /**
+     * start doctor's turn and let him choose one citizen to revive.
+     * @return survived player
+     */
+    public Player startDoctorTurn() {
+        sendCustomGroupFilteredMessage("Doctor is awake now.", "Doctor", false, false, true);
+        wakeupGroup("Doctor", true, false, true);
+        Doctor doctor = (Doctor) getPlayerByRole("Doctor");
+        if (doctor == null || !doctor.isAlive()) {
+            sleepGroup("Doctor", true, false, true);
+            sendCustomGroupFilteredMessage("Doctor is asleep now.", "Doctor", false, false, true);
+            return null;
+        }
+
+        sendCustomMessageToPlayer("Choose a player to survive:", doctor, false, false, true);
+        Player survivedPlayer = null;
+        LocalTime finishingTime = LocalTime.now().plusSeconds(Setting.getNighActionTime().toSecondOfDay());
+        survivedPlayer = getVote(doctor, finishingTime, "All", "None", !doctor.hasHealedHimself());
+        sleepGroup("Doctor", true, false, true);
+        sendCustomGroupFilteredMessage("Doctor is asleep now.", "Doctor", false, false, true);
+        if (survivedPlayer != null && survivedPlayer.equals(doctor))
+            doctor.setHasHealedHimself(true);
+        return survivedPlayer;
+    }
+
+    /**
+     * start detector's turn and let him inquire about mafias
+     */
+    public void startDetectorTurn() {
+        Detector detector = (Detector) getPlayerByRole("Detector");
+        wakeupGroup("Detector", true, false, true);
+        sendCustomGroupFilteredMessage("Detector is awake.", "Detector", false, false, true);
+        if (detector == null || !detector.isAlive()) {
+            sleepGroup("Detector", true, false, true);
+            sendCustomGroupFilteredMessage("Detector is asleep.", "Detector", false, false, true);
+            return;
+        }
+        sendCustomMessageToPlayer("Choose one player to inquire:", detector, false, false, true);
+        LocalTime finishingTime = LocalTime.now().plusSeconds(Setting.getNighActionTime().toSecondOfDay());
+        Player inquiredPlayer = getVote(detector, finishingTime, "All", "None", false);
+        if (inquiredPlayer == null)
+            return;
+        if (inquiredPlayer.hasRole("Mafia") && !inquiredPlayer.hasRole("GodFather"))
+            sendCustomMessageToPlayer("Inquire result for " + inquiredPlayer + " is positive.", detector, false, true, true);
+        else
+            sendCustomMessageToPlayer("Inquire result for " + inquiredPlayer + " is negative.", detector, false, true, true);
     }
 
     /**
