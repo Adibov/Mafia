@@ -364,7 +364,7 @@ public class GameController {
                 continue;
             candidatePlayers.add(player);
         }
-        showAlivePlayersToPlayer(voterPlayer, false, false, false, true);
+        showAlivePlayersToPlayer(voterPlayer, false, showHimself, false, false, true);
         PlayerController playerController = playerControllers.get(voterPlayer);
         if (playerController == null)
             return null;
@@ -745,14 +745,15 @@ public class GameController {
      * show alive players to the corresponding player
      * @param targetPlayer target player
      * @param showRoles if true, will also show roles of players in same team
+     * @param showHimself if true, will also show himself in the list of players
      * @param options call clearScreen, call getCh
      */
-    public void showAlivePlayersToPlayer(Player targetPlayer, boolean showRoles, boolean... options) {
+    public void showAlivePlayersToPlayer(Player targetPlayer, boolean showRoles, boolean showHimself, boolean... options) {
         int playerCount = 1;
         StringBuilder message = new StringBuilder();
         message.append("Alive players:\n");
         for (Player player : players) {
-            if (player.equals(targetPlayer) || !player.isAlive()) // doesn't show himself or dead players
+            if ((player.equals(targetPlayer) && !showHimself) || !player.isAlive()) // doesn't show himself or dead players
                 continue;
             message.append(playerCount).append(") ").append(player);
             if (showRoles && targetPlayer.isInSameTeam(player) && player.isAwake()) {
@@ -787,7 +788,7 @@ public class GameController {
                 boolean finalCallGetCh = callGetCh;
                 boolean finalWaitForResponse = waitForResponse;
                 playerThreads.execute(() -> {
-                    showAlivePlayersToPlayer(player, showRoles, finalCallClearScreen, finalCallGetCh, finalWaitForResponse);
+                    showAlivePlayersToPlayer(player, showRoles, false, finalCallClearScreen, finalCallGetCh, finalWaitForResponse);
                     finishedThread.incrementAndGet();
                 });
                 loopCounter++;
