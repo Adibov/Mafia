@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @version 1.0
  */
 public class GameController {
-    final static private ExecutorService playerThreads = Executors.newCachedThreadPool();
+    static private ExecutorService playerThreads;
     private CopyOnWriteArrayList<Player> players; // list of the players, who has not been kicked out of the game yet
     private ServerSocket serverSocket;
     final private ConcurrentHashMap<Player, PlayerController> playerControllers; // maps each player to his PlayerController
@@ -34,6 +34,7 @@ public class GameController {
         daytime = DAYTIME.DAY;
         try {
             serverSocket = new ServerSocket(2021);
+            playerThreads = Executors.newCachedThreadPool();
         }
         catch (IOException exception) {
             exception.printStackTrace();
@@ -492,6 +493,10 @@ public class GameController {
             doctorLecterTarget = startDoctorLecterTurn();
         Player doctorTarget = startDoctorTurn();
         startDetectorTurn();
+        Player sniperTarget = null;
+        if (Setting.getNumberOfPlayers() - Setting.getNumberOfMafias() > 2) // make sure sniper exists in game
+            sniperTarget = startSniperTurn();
+
     }
 
     /**
@@ -538,13 +543,14 @@ public class GameController {
      */
     public Player startDoctorLecterTurn() {
         sendCustomGroupFilteredMessage("Doctor Lecter is awake now.", "DoctorLecter", false, false, true);
-        wakeupGroup("DoctorLecter", true, false, true);
         DoctorLecter doctorLecter = (DoctorLecter) getPlayerByRole("DoctorLecter");
         if (doctorLecter == null || !doctorLecter.isAlive()) {
-            sleepGroup("DoctorLecter", true, false, true);
+            // sleep for a random time to prevent other players from finding out dead roles
+            sleepRandomTime(Setting.getNighActionTime().toSecondOfDay() * 1000L);
             sendCustomGroupFilteredMessage("Doctor Lecter is asleep now.", "DoctorLecter", false, false, true);
             return null;
         }
+        wakeupGroup("DoctorLecter", true, false, true);
 
         sendCustomMessageToPlayer("Choose a mafia to survive:", doctorLecter, false, false, true);
         Player survivedPlayer = null;
@@ -563,13 +569,14 @@ public class GameController {
      */
     public Player startDoctorTurn() {
         sendCustomGroupFilteredMessage("Doctor is awake now.", "Doctor", false, false, true);
-        wakeupGroup("Doctor", true, false, true);
         Doctor doctor = (Doctor) getPlayerByRole("Doctor");
         if (doctor == null || !doctor.isAlive()) {
-            sleepGroup("Doctor", true, false, true);
+            // sleep for a random time to prevent other players from finding out dead roles
+            sleepRandomTime(Setting.getNighActionTime().toSecondOfDay() * 1000L);
             sendCustomGroupFilteredMessage("Doctor is asleep now.", "Doctor", false, false, true);
             return null;
         }
+        wakeupGroup("Doctor", true, false, true);
 
         sendCustomMessageToPlayer("Choose a player to survive:", doctor, false, false, true);
         Player survivedPlayer = null;
@@ -587,22 +594,49 @@ public class GameController {
      */
     public void startDetectorTurn() {
         Detector detector = (Detector) getPlayerByRole("Detector");
-        wakeupGroup("Detector", true, false, true);
         sendCustomGroupFilteredMessage("Detector is awake.", "Detector", false, false, true);
         if (detector == null || !detector.isAlive()) {
-            sleepGroup("Detector", true, false, true);
+            // sleep for a random time to prevent other players from finding out dead roles
+            sleepRandomTime(Setting.getNighActionTime().toSecondOfDay() * 1000L);
             sendCustomGroupFilteredMessage("Detector is asleep.", "Detector", false, false, true);
             return;
         }
+        wakeupGroup("Detector", true, false, true);
         sendCustomMessageToPlayer("Choose one player to inquire:", detector, false, false, true);
         LocalTime finishingTime = LocalTime.now().plusSeconds(Setting.getNighActionTime().toSecondOfDay());
         Player inquiredPlayer = getVote(detector, finishingTime, "All", "None", false);
-        if (inquiredPlayer == null)
+        sendCustomGroupFilteredMessage("Detector is asleep.", "Detector", false, false, true);
+        if (inquiredPlayer == null) {
+            sleepGroup("Detector", true, false, true);
             return;
+        }
         if (inquiredPlayer.hasRole("Mafia") && !inquiredPlayer.hasRole("GodFather"))
             sendCustomMessageToPlayer("Inquire result for " + inquiredPlayer + " is positive.", detector, false, true, true);
         else
             sendCustomMessageToPlayer("Inquire result for " + inquiredPlayer + " is negative.", detector, false, true, true);
+        sleepGroup("Detector", true, false, true);
+    }
+
+    /**
+     * start sniper's turn and ask him whether he wants to shoot or not.
+     * @return target player
+     */
+    public Player startSniperTurn() {
+        Sniper sniper = (Sniper) getPlayerByRole("Sniper");
+        sendCustomGroupFilteredMessage("Sniper is awake.", "Sniper", false, false, true);
+        if (sniper == null || !sniper.isAlive()) {
+            // sleep for a random time to prevent other players from finding out dead roles
+            sleepRandomTime(Setting.getNighActionTime().toSecondOfDay() * 1000L);
+            sendCustomGroupFilteredMessage("Sniper is asleep.", "Sniper", false, false, true);
+            return null;
+        }
+        wakeupGroup("Sniper", true, false, true);
+        sendCustomMessageToPlayer("Choose one player to shoot, (enter 0 to cancel shooting):", sniper, false, false, true);
+        LocalTime finishingTime = LocalTime.now().plusSeconds(Setting.getNighActionTime().toSecondOfDay());
+        Player targetPlayer = getVote(sniper, finishingTime, "All", "None", false);
+        sendCustomGroupFilteredMessage("Detector is asleep.", "Detector", false, false, true);
+        sleepGroup("Sniper", true, false, true);
+        return targetPlayer;
     }
 
     /**
@@ -973,6 +1007,21 @@ public class GameController {
     public void sleep(long delayTime) {
         try {
             Thread.sleep(delayTime);
+        }
+        catch (InterruptedException exception) {
+            exception.printStackTrace();
+        }
+    }
+
+    /**
+     * sleep for a random time in milliseconds
+     * @param delayTime generate a random time in range [0, delayTime]
+     */
+    public void sleepRandomTime(long delayTime) {
+        Random random = new Random();
+        long randomTime = random.nextInt((int) delayTime);
+        try {
+            Thread.sleep(randomTime);
         }
         catch (InterruptedException exception) {
             exception.printStackTrace();
