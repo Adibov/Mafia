@@ -143,6 +143,25 @@ public class PlayerController {
     }
 
     /**
+     * get an option from player between yes or no option
+     * @param finishingTime choosing deadline
+     * @return true, if player enters yes
+     */
+    public boolean ask(LocalTime finishingTime) {
+        while (LocalTime.now().compareTo(finishingTime) < 0) {
+            if (clientHandler.isStreamEmpty())
+                continue;
+            String option = getMessage().getBody().toLowerCase().replaceAll(" ", "");
+            if (option.equals("yes"))
+                return true;
+            else if (option.equals("no"))
+                return false;
+            sendMessage("Invalid input.");
+        }
+        return false;
+    }
+
+    /**
      * clear screen for the player
      */
     private void clearScreen() {

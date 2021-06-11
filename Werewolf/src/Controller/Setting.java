@@ -21,6 +21,8 @@ public class Setting {
     final static private LocalTime discussionPhaseTime = LocalTime.of(0, 0, 1);
     // how much time does a player have to vote in voting phase
     final static private LocalTime votingTime = LocalTime.of(0, 5, 30);
+    // how many times does diehard can inquire game status
+    final static private int dieHardInquireCount = 2;
 
     ///////////////// server setting \\\\\\\\\\\\\\\\\\\\
     // sleep time in milliseconds
@@ -90,5 +92,13 @@ public class Setting {
      */
     public static LocalTime getVotingTime() {
         return votingTime;
+    }
+
+    /**
+     * get dieHardInquireCount
+     * @return dieHardInquireCount
+     */
+    public static int getDieHardInquireCount() {
+        return dieHardInquireCount;
     }
 }

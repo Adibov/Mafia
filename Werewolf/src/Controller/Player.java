@@ -19,7 +19,8 @@ public class Player extends Person {
     final transient private Scanner inputScanner = new Scanner(System.in);
     private boolean isAlive;
     private boolean isAwake;
-    private int recordCount;
+    private boolean isMute; // if true, cannot speak in the middle of day
+    private int recordCount; // how many times does the player have been suspected in voting phase
 
     /**
      * class constructor, for making a player with no username
@@ -178,6 +179,14 @@ public class Player extends Person {
     }
 
     /**
+     * isMute getter
+     * @return isMute
+     */
+    public boolean isMute() {
+        return isMute;
+    }
+
+    /**
      * recordCount getter
      * @return recordCount
      */
@@ -199,6 +208,14 @@ public class Player extends Person {
      */
     public void setAlive(boolean alive) {
         isAlive = alive;
+    }
+
+    /**
+     * isMute setter
+     * @param mute isMute new value
+     */
+    public void setMute(boolean mute) {
+        isMute = mute;
     }
 
     /**

@@ -496,7 +496,8 @@ public class GameController {
         Player sniperTarget = null;
         if (Setting.getNumberOfPlayers() - Setting.getNumberOfMafias() > 2) // make sure sniper exists in game
             sniperTarget = startSniperTurn();
-
+        Player psychologistTarget = startPsychologistTurn();
+        boolean hasInquire = startDieHardTurn();
     }
 
     /**
@@ -634,9 +635,51 @@ public class GameController {
         sendCustomMessageToPlayer("Choose one player to shoot, (enter 0 to cancel shooting):", sniper, false, false, true);
         LocalTime finishingTime = LocalTime.now().plusSeconds(Setting.getNighActionTime().toSecondOfDay());
         Player targetPlayer = getVote(sniper, finishingTime, "All", "None", false);
-        sendCustomGroupFilteredMessage("Detector is asleep.", "Detector", false, false, true);
+        sendCustomGroupFilteredMessage("Detector is asleep.", "Sniper", false, false, true);
         sleepGroup("Sniper", true, false, true);
         return targetPlayer;
+    }
+
+    /**
+     * start psychologist's turn and let him make someone mute
+     * @return muted player
+     */
+    public Player startPsychologistTurn() {
+        Psychologist psychologist = (Psychologist) getPlayerByRole("Psychologist");
+        sendCustomGroupFilteredMessage("Psychologist is awake.", "Psychologist", false, false, true);
+        if (psychologist == null || !psychologist.isAlive()) {
+            // sleep for a random time to prevent other players from finding out dead roles
+            sleepRandomTime(Setting.getNighActionTime().toSecondOfDay() * 1000L);
+            sendCustomGroupFilteredMessage("Psychologist is asleep.", "Psychologist", false, false, true);
+            return null;
+        }
+        wakeupGroup("Psychologist", true, false, true);
+        sendCustomMessageToPlayer("Choose one player to mute, (enter 0 to cancel shooting):", psychologist, false, false, true);
+        LocalTime finishingTime = LocalTime.now().plusSeconds(Setting.getNighActionTime().toSecondOfDay());
+        Player targetPlayer = getVote(psychologist, finishingTime, "All", "None", false);
+        sendCustomGroupFilteredMessage("Psychologist is asleep.", "Psychologist", false, false, true);
+        sleepGroup("Psychologist", true, false, true);
+        return targetPlayer;
+    }
+
+    /**
+     * start diehard's turn and ask him whether he wants to inquire status of the game or not
+     * @return true, if diehard wants to inquire
+     */
+    public boolean startDieHardTurn() {
+        DieHard dieHard = (DieHard) getPlayerByRole("DieHard");
+        PlayerController playerController = playerControllers.get(dieHard);
+        sendCustomGroupFilteredMessage("DieHard is awake.", "DieHard", false, false, true);
+        if (dieHard == null || !dieHard.isAlive() || playerController == null || dieHard.getInquireCount() == Setting.getDieHardInquireCount()) {
+            // sleep for a random time to prevent other players from finding out dead roles
+            sleepRandomTime(Setting.getNighActionTime().toSecondOfDay() * 1000L);
+            sendCustomGroupFilteredMessage("Diehard is asleep.", "Diehard", false, false, true);
+            return false;
+        }
+        wakeupGroup("DieHard", true, false, true);
+        LocalTime finishingTime = LocalTime.now().plusSeconds(Setting.getNighActionTime().toSecondOfDay());
+        sendCustomMessageToPlayer("Do you want to inquire status of the game? (Enter yes or no)", dieHard, false, false, true);
+        return playerController.ask(finishingTime);
     }
 
     /**
