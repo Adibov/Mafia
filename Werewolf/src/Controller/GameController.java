@@ -30,6 +30,8 @@ public class GameController {
     private Player sniperTarget;
     private Player psychologistTarget;
     private boolean dieHardHasInquire;
+    // dead players information:
+    private ArrayList<Player> deadPlayers;
 
     /**
      * class constructor
@@ -39,6 +41,7 @@ public class GameController {
         playerControllers = new ConcurrentHashMap<>();
         dayNumber = 0;
         daytime = DAYTIME.DAY;
+        deadPlayers = new ArrayList<Player>();
         try {
             serverSocket = new ServerSocket(2021);
             playerThreads = Executors.newCachedThreadPool();
@@ -46,6 +49,13 @@ public class GameController {
         catch (IOException exception) {
             exception.printStackTrace();
         }
+
+        mafiasTarget = null;
+        doctorLecterTarget = null;
+        doctorTarget = null;
+        sniperTarget = null;
+        psychologistTarget = null;
+        dieHardHasInquire = false;
     }
 
     /**
@@ -205,6 +215,7 @@ public class GameController {
      * DESCRIPTION: in this day, players talk in turn and introduce themself to the other players.
      */
     public void startIntroductionDay() {
+        showAlivePlayersToServer();
         sendCustomMessageToAll("Introduction day started. Each player can speak for "
                     + Setting.getIntroductionTurnTime().toString() + " seconds in his turn.",
                     true, false);
@@ -224,6 +235,7 @@ public class GameController {
      * DESCRIPTION: In this night, players wakeup in turn and get to know each other
      */
     public void startFirstNight() {
+        showAlivePlayersToServer();
         sleepPlayers();
         // mafias introduction
         if (Setting.getNumberOfMafias() > 1) { // make sure there exists at least two mafias in game
@@ -259,6 +271,7 @@ public class GameController {
      * 4. hold a voting for kicking a player
      */
     public void startRegularDay() {
+        showAlivePlayersToServer();
         wakeupGroup("All", true, false, true);
         reportLastNightEvents();
         showAlivePlayersToGroup("All", false, false, false, true);
@@ -344,9 +357,13 @@ public class GameController {
 
         int deadMafias = Setting.getNumberOfMafias() - mafiasNumber;
         int deadCitizens = Setting.getNumberOfCitizens() - citizensNumber;
-        sendCustomMessageToAll("Until now, " + (deadMafias + deadCitizens) + " have been died. " +
-                deadCitizens + " of them were citizen and " + deadMafias + " of them were mafia.",
+        sendCustomMessageToAll("Until now, " + (deadMafias + deadCitizens) + " player(s) have been died. " +
+                deadCitizens + " of them were citizen and " + deadMafias + " of them were mafia. Dead roles are as follows:",
                 false, false, true);
+        StringBuilder message = new StringBuilder();
+        for (Player player : deadPlayers)
+            message.append(player.getRole()).append(" ");
+        sendCustomMessageToAll(message.toString(), false, false, true);
     }
 
     /**
@@ -415,6 +432,13 @@ public class GameController {
                             voteCount.put(votedPlayer, count);
                         }
                     }
+                    finishedThread.incrementAndGet();
+                });
+                loopCount++;
+            }
+            else {
+                playerThreads.execute(() -> {
+                    sendCustomMessageToPlayer("Wait until other are players voting.", player, true, false, true);
                     finishedThread.incrementAndGet();
                 });
                 loopCount++;
@@ -551,7 +575,8 @@ public class GameController {
             }
             break;
         }
-        sendCustomMessageToAll(deadPlayer + " has died.", false, true, true);
+        sendCustomMessageToAll(deadPlayer + " has died.", false, false, true);
+        deadPlayers.add(deadPlayer);
     }
 
     /**
@@ -567,6 +592,7 @@ public class GameController {
      * 7. wakeup diehard and ask him whether he wants god to announce status of the game
      */
     public void startRegularNight() {
+        showAlivePlayersToServer();
         sleepGroup("All", true, false, true);
         mafiasTarget = startMafiasTurn();
         doctorLecterTarget = null;
@@ -901,6 +927,7 @@ public class GameController {
         sendCustomMessageToPlayer("EXIT", player, false, false, true);
         players.remove(player);
         playerControllers.remove(player);
+        deadPlayers.add(player);
         sendCustomMessageToAll("\n" + player + " has been kicked out/disconnected from the game.\n", true, true, true);
     }
 
@@ -920,7 +947,7 @@ public class GameController {
                 continue;
             message.append(playerCount).append(") ").append(player);
             if (showRoles && targetPlayer.isInSameTeam(player) && player.isAwake()) {
-                String role = player.getClass().toString().split("\\.")[1];
+                String role = player.getRole();
                 message.append(" (").append(role).append(")");
             }
             message.append("\n");
@@ -958,6 +985,18 @@ public class GameController {
             }
         while (waitForResponse && finishedThread.get() < loopCounter) // wait until all players have received message
             sleep();
+    }
+
+    /**
+     * show alive players to the server
+     */
+    public void showAlivePlayersToServer() {
+        System.out.println("\n\nAlive players:");
+        for (Player player : players)
+            if (player.isAlive()) {
+                int spaceCount = 15 - player.toString().length();
+                System.out.println(player + ":" + " ".repeat(spaceCount) + player.getRole());
+            }
     }
 
     /**

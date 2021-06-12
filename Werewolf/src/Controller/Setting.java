@@ -10,17 +10,17 @@ import java.time.LocalTime;
 public class Setting {
     //////////// gameplay setting \\\\\\\\\\\\\\\\\
     // total number of players
-    final static private int numberOfPlayers = 3;
+    final static private int numberOfPlayers = 10;
     // total number of mafias
     final static private int numberOfMafias = (numberOfPlayers + 1) / 3;
     // how much time does a player can talk in an introduction phase
     final static private LocalTime introductionTurnTime = LocalTime.of(0, 0, 1);
     // how much time does a player can make his turn in night
-    final static private LocalTime nighActionTime = LocalTime.of(0, 0, 30);
+    final static private LocalTime nighActionTime = LocalTime.of(0, 5, 30);
     // how much time do players can talk in a regular discussion phase
     final static private LocalTime discussionPhaseTime = LocalTime.of(0, 0, 1);
     // how much time does a player have to vote in voting phase
-    final static private LocalTime votingTime = LocalTime.of(0, 5, 30);
+    final static private LocalTime votingTime = LocalTime.of(0, 5, 1);
     // how many times does diehard can inquire game status
     final static private int dieHardInquireCount = 2;
 

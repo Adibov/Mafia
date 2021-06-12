@@ -145,6 +145,14 @@ public class Player extends Person {
     }
 
     /**
+     * get player role
+     * @return player role
+     */
+    public String getRole() {
+        return this.getClass().toString().split("\\.")[1];
+    }
+
+    /**
      * check if the given player is in a same team (Citizen or Mafia)
      * @param player given player
      * @return boolean result

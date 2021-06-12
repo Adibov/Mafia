@@ -95,6 +95,11 @@ public class ClientHandler {
         return true;
     }
 
+    public void clearStream() {
+        while (!isStreamEmpty())
+            getMessage(); // drop
+    }
+
     /**
      * override equals method
      * @param o given object

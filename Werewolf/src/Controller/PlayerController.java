@@ -93,7 +93,7 @@ public class PlayerController {
                 gameController.sendCustomMessageToAll(message, false, false);
             }
         }
-        System.out.println(player + " finished");
+//        System.out.println(player + " finished");
     }
 
     /**
@@ -148,6 +148,7 @@ public class PlayerController {
      * @return true, if player enters yes
      */
     public boolean ask(LocalTime finishingTime) {
+        clearStream(); // to make sure that server does not send "Invalid input." message first
         while (LocalTime.now().compareTo(finishingTime) < 0) {
             if (clientHandler.isStreamEmpty())
                 continue;
@@ -241,6 +242,15 @@ public class PlayerController {
         sendMessage(bodyMessage);
         if (callGetCh)
             getCh();
+    }
+
+    /**
+     * clear input stream in clientHandler so old messages will be deleted
+     */
+    public void clearStream() {
+        if (clientHandler == null)
+            return;
+        clientHandler.clearStream();
     }
 
     /**
