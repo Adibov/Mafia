@@ -47,6 +47,14 @@ public class Setting {
     }
 
     /**
+     * return number of citizens
+     * @return citizens' count
+     */
+    public static int getNumberOfCitizens() {
+        return Setting.getNumberOfPlayers() - Setting.getNumberOfMafias();
+    }
+
+    /**
      * serverRefreshTime getter
      * @return serverRefreshTime
      */

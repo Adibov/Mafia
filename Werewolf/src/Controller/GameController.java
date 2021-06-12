@@ -23,6 +23,13 @@ public class GameController {
     final private ConcurrentHashMap<Player, PlayerController> playerControllers; // maps each player to his PlayerController
     private int dayNumber; // how many days have been passed
     private DAYTIME daytime; // daytime of the current game
+    // last night actions:
+    private Player mafiasTarget;
+    private Player doctorLecterTarget;
+    private Player doctorTarget;
+    private Player sniperTarget;
+    private Player psychologistTarget;
+    private boolean dieHardHasInquire;
 
     /**
      * class constructor
@@ -116,19 +123,17 @@ public class GameController {
         for (int i = 0; i < numberOfMafias; i++) {
             Player player = players.get(i), newRole = player;
             PlayerController playerController = playerControllers.get(player);
-            //noinspection EnhancedSwitchMigration
-            switch (i) {
-                case 0:
-                    newRole = new GodFather(newRole);
-                    sendCustomMessageToPlayer("You are God Father of the game.", newRole, true, true);
-                    break;
-                case 1:
-                    newRole = new DoctorLecter(newRole);
-                    sendCustomMessageToPlayer("You are Doctor Lecter of the game.", newRole, true, true);
-                    break;
-                default:
-                    newRole = new Mafia(newRole);
-                    sendCustomMessageToPlayer("You are Mafia of the game.", newRole, true, true);
+            if (i == 0) {
+                newRole = new GodFather(newRole);
+                sendCustomMessageToPlayer("You are God Father of the game.", newRole, true, true);
+            }
+            else if (i == 1 && Setting.getNumberOfPlayers() > 2) { // make sure sniper exists in game
+                newRole = new DoctorLecter(newRole);
+                sendCustomMessageToPlayer("You are Doctor Lecter of the game.", newRole, true, true);
+            }
+            else {
+                newRole = new Mafia(newRole);
+                sendCustomMessageToPlayer("You are Mafia of the game.", newRole, true, true);
             }
             playerControllers.remove(player);
             newPlayers.add(newRole);
@@ -263,9 +268,85 @@ public class GameController {
 
     /**
      * report last night events to players
+     * PHASES:
+     * 1. check if mafias' target has dead
+     * 2. check if sniper's target has dead
+     * 3. mute psychologist's target
+     * 4. announce status of the game if diehard wants to
      */
     public void reportLastNightEvents() {
+        killMafiasTarget();
+        killSniperTarget();
+        mutePsychologistTarget();
+        if (isGameFinished())
+            finishGame();
+        announceGameStatus();
+    }
 
+    /**
+     * kill mafias' target if doctor survived wrong person
+     */
+    public void killMafiasTarget() {
+        if (mafiasTarget != null) {
+            Player deadPlayer = mafiasTarget;
+            if (doctorTarget != null && doctorTarget.equals(mafiasTarget))
+                deadPlayer = null;
+            if (deadPlayer != null)
+                killPlayer(deadPlayer);
+        }
+    }
+
+    /**
+     * kill sniper's target if doctor lecter survived wrong mafia
+     */
+    public void killSniperTarget() {
+        if (sniperTarget != null) {
+            Player deadPlayer = sniperTarget;
+            if (doctorLecterTarget != null && doctorLecterTarget.equals(sniperTarget))
+                deadPlayer = null;
+            if (deadPlayer != null) {
+                if (deadPlayer.hasRole("Mafia"))
+                    killPlayer(deadPlayer);
+                else {
+                    Player sniper = getPlayerByRole("Sniper");
+                    if (sniper != null)
+                        killPlayer(sniper);
+                }
+            }
+        }
+    }
+
+    /**
+     * mute psychologist's target
+     */
+    public void mutePsychologistTarget() {
+        if (psychologistTarget != null) {
+            psychologistTarget.setMute(true);
+            sendCustomMessageToAll(
+                    psychologistTarget+ " is mute, he/she cannot talk during this day.",
+                    false, false, true
+                    );
+        }
+    }
+
+    /**
+     * announce status of the game if diehard has inquired
+     */
+    public void announceGameStatus() {
+        if (!dieHardHasInquire)
+            return;
+        int mafiasNumber = 0, citizensNumber = 0;
+        for (Player player : players)
+            if (player.isAlive() && player.hasRole("Mafia"))
+                mafiasNumber++;
+            else if (player.isAlive())
+                citizensNumber++;
+
+        int deadMafias = Setting.getNumberOfMafias() - mafiasNumber;
+        int deadCitizens = Setting.getNumberOfCitizens() - citizensNumber;
+        sendCustomMessageToAll("Until now, " + (deadMafias + deadCitizens) + " have been died. " +
+                deadCitizens + " of them were citizen and " + deadMafias + " of them were mafia.",
+                false, false, true);
     }
 
     /**
@@ -487,17 +568,21 @@ public class GameController {
      */
     public void startRegularNight() {
         sleepGroup("All", true, false, true);
-        Player mafiasTarget = startMafiasTurn();
-        Player doctorLecterTarget = null;
+        mafiasTarget = startMafiasTurn();
+        doctorLecterTarget = null;
         if (Setting.getNumberOfMafias() > 1) // make sure doctor lecter exists in game
             doctorLecterTarget = startDoctorLecterTurn();
-        Player doctorTarget = startDoctorTurn();
+        doctorTarget = startDoctorTurn();
         startDetectorTurn();
-        Player sniperTarget = null;
+        sniperTarget = null;
         if (Setting.getNumberOfPlayers() - Setting.getNumberOfMafias() > 2) // make sure sniper exists in game
             sniperTarget = startSniperTurn();
-        Player psychologistTarget = startPsychologistTurn();
-        boolean hasInquire = startDieHardTurn();
+        psychologistTarget = null;
+        if (Setting.getNumberOfPlayers() - Setting.getNumberOfMafias() > 3) // make sure psychologist exits in game
+            psychologistTarget = startPsychologistTurn();
+        dieHardHasInquire = false;
+        if (Setting.getNumberOfPlayers() - Setting.getNumberOfMafias() > 4) // make sure diehard exists in game
+            dieHardHasInquire = startDieHardTurn();
     }
 
     /**
@@ -700,6 +785,7 @@ public class GameController {
             sendCustomMessageToAll("Congratulations to mafias. They have won the game.", true, false, true);
         for (Player player : players)
             sendCustomMessageToPlayer("EXIT", player, false, false, true);
+        System.exit(0);
     }
 
     /**
