@@ -70,6 +70,7 @@ public class PlayerController {
      * @param duration chatroom duration
      */
     public void talk(LocalTime startingTime, LocalTime duration) {
+        clearStream();
         long lastPrintedTime = 0;
         while (true) {
             long remainingTime = duration.toSecondOfDay() - (LocalTime.now().toSecondOfDay() - startingTime.toSecondOfDay());
@@ -94,6 +95,20 @@ public class PlayerController {
             }
         }
 //        System.out.println(player + " finished");
+    }
+
+    /**
+     * sleep player
+     * @param options call clearScreen, call getCh
+     */
+    public void sleep(boolean... options) {
+        boolean callClearScreen = false, callGetCh = false;
+        if (options.length > 0)
+            callClearScreen = options[0];
+        if (options.length > 1)
+            callGetCh = options[1];
+        player.setAwake(false);
+        sendCustomMessage("You are asleep now, please wait until god informs you.", callClearScreen, callGetCh);
     }
 
     /**
@@ -136,7 +151,7 @@ public class PlayerController {
                     sendMessage("Invalid input.");
             }
             catch (NumberFormatException exception) {
-//                exception.printStackTrace();
+                sendMessage("Invalid input.");
             }
         }
         return result;
