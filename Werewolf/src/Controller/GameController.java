@@ -243,7 +243,7 @@ public class GameController {
             wakeupGroup("Mafia");
             sendCustomGroupFilteredMessage("Mafias have woke up.", "Mafia", false, false);
             showAlivePlayersToGroup("Mafia", true, false, true, true);
-            sleepGroup("Mafia");
+            sleepGroup("Mafia", true, false, true);
             sendCustomGroupFilteredMessage("Mafias have slept.", "Mafia", false, false);
         }
 
@@ -408,7 +408,7 @@ public class GameController {
         System.out.println("Start voting.");
         sendCustomMessageToAll(
                 "Voting phase started, you can vote for " + Setting.getVotingTime().toSecondOfDay() +
-                        " seconds. Send '0' for settle on abstention and 'end' to make your vote finalize.",
+                        " seconds. Send '0' for settle on abstention.",
                 true, false, true);
         // how many players have voted to the target player
         ConcurrentHashMap<Player, Integer> voteCount = new ConcurrentHashMap<>();
@@ -480,7 +480,7 @@ public class GameController {
         if (voteIndex == 0) {
             Message message = new Message("I've settled on abstention.", voterPlayer);
             sendCustomMessageToPlayer("You have settled on abstention.", voterPlayer, false, true, true);
-            sendCustomMessageToAll(message, false, false, true);
+            sendCustomMessageToGroup(message, receiversRole, false, false, true);
             return null;
         }
 
@@ -567,24 +567,24 @@ public class GameController {
      */
     public void killPlayer(Player deadPlayer) {
         deadPlayer.setAlive(false);
+        sendCustomMessageToAll(
+                deadPlayer + " has died, please wait until he choose to leave game or not.",
+                false, false, true
+        );
         String message = """
                 You have died. Please choose one option:
                 1) watch game till the end
                 2) leave game""";
         sendCustomMessageToPlayer(message, deadPlayer, true, false, true);
-        while (true) {
-            int option = Integer.parseInt(getMessageFromPlayer(deadPlayer).getBody());
-            if (option < 1 || option > 2) {
-                sendCustomMessageToPlayer("Invalid input.", deadPlayer, false, false, true);
-                continue;
-            }
-            if (option == 2) {
-                kickPlayer(deadPlayer);
-                return;
-            }
-            break;
+        PlayerController playerController = playerControllers.get(deadPlayer);
+        LocalTime finishingTime = LocalTime.now().plusSeconds(Setting.getNightActionTime().toSecondOfDay());
+        int option = playerController.vote(2, finishingTime);
+        if (option == 0)
+            option = 2;
+        if (option == 2) {
+            kickPlayer(deadPlayer);
+            return;
         }
-        sendCustomMessageToAll(deadPlayer + " has died.", false, false, true);
         deadPlayers.add(deadPlayer);
     }
 
@@ -669,7 +669,7 @@ public class GameController {
         DoctorLecter doctorLecter = (DoctorLecter) getPlayerByRole("DoctorLecter");
         if (doctorLecter == null || !doctorLecter.isAlive()) {
             // sleep for a random time to prevent other players from finding out dead roles
-            sleepRandomTime(Setting.getNightActionTime().toSecondOfDay() * 1000L);
+            sleepRandomTime(Setting.getRandomNightActionTime().toSecondOfDay() * 1000L);
             sendCustomGroupFilteredMessage("Doctor Lecter is asleep now.", "DoctorLecter", false, false, true);
             return null;
         }
@@ -695,7 +695,7 @@ public class GameController {
         Doctor doctor = (Doctor) getPlayerByRole("Doctor");
         if (doctor == null || !doctor.isAlive()) {
             // sleep for a random time to prevent other players from finding out dead roles
-            sleepRandomTime(Setting.getNightActionTime().toSecondOfDay() * 1000L);
+            sleepRandomTime(Setting.getRandomNightActionTime().toSecondOfDay() * 1000L);
             sendCustomGroupFilteredMessage("Doctor is asleep now.", "Doctor", false, false, true);
             return null;
         }
@@ -720,7 +720,7 @@ public class GameController {
         sendCustomGroupFilteredMessage("Detector is awake.", "Detector", false, false, true);
         if (detector == null || !detector.isAlive()) {
             // sleep for a random time to prevent other players from finding out dead roles
-            sleepRandomTime(Setting.getNightActionTime().toSecondOfDay() * 1000L);
+            sleepRandomTime(Setting.getRandomNightActionTime().toSecondOfDay() * 1000L);
             sendCustomGroupFilteredMessage("Detector is asleep.", "Detector", false, false, true);
             return;
         }
@@ -749,7 +749,7 @@ public class GameController {
         sendCustomGroupFilteredMessage("Sniper is awake.", "Sniper", false, false, true);
         if (sniper == null || !sniper.isAlive()) {
             // sleep for a random time to prevent other players from finding out dead roles
-            sleepRandomTime(Setting.getNightActionTime().toSecondOfDay() * 1000L);
+            sleepRandomTime(Setting.getRandomNightActionTime().toSecondOfDay() * 1000L);
             sendCustomGroupFilteredMessage("Sniper is asleep.", "Sniper", false, false, true);
             return null;
         }
@@ -771,7 +771,7 @@ public class GameController {
         sendCustomGroupFilteredMessage("Psychologist is awake.", "Psychologist", false, false, true);
         if (psychologist == null || !psychologist.isAlive()) {
             // sleep for a random time to prevent other players from finding out dead roles
-            sleepRandomTime(Setting.getNightActionTime().toSecondOfDay() * 1000L);
+            sleepRandomTime(Setting.getRandomNightActionTime().toSecondOfDay() * 1000L);
             sendCustomGroupFilteredMessage("Psychologist is asleep.", "Psychologist", false, false, true);
             return null;
         }
@@ -811,13 +811,18 @@ public class GameController {
      */
     public boolean startMayorTurn(Player targetPlayer) {
         Mayor mayor = (Mayor) getPlayerByRole("Mayor");
-        if (mayor == null || mayor.hasCanceledVoting() || !mayor.isAlive()) {
+        if (mayor == null || mayor.hasCanceledVoting()) {
             return false;
         }
         PlayerController playerController = playerControllers.get(mayor);
         if (playerController == null)
             return false;
         sleepGroup("All", false, false, true);
+        sendCustomGroupFilteredMessage(
+                "Mayor is choosing whether he wants cancel voting or not.",
+                "Mayor",
+                false, false, true
+        );
         wakeupGroup("Mayor", false, false, true);
         sendCustomMessageToPlayer(
                 "Do you want to cancel voting for " + targetPlayer + "?",

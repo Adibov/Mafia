@@ -81,14 +81,12 @@ public class PlayerController {
                 lastPrintedTime = remainingTime;
             }
 
-            if (clientHandler.isSocketClosed()) {
-                gameController.kickPlayer(player);
-                break;
-            }
             if (!clientHandler.isStreamEmpty()) {
                 Message message = getMessage();
-                if (message.getBody().equals("end")) // user wants to end his speaking
+                if (message.getBody().equals("end")) { // user wants to end his speaking
+                    sendMessage("Your speak has ended, please wait until other players' turn ");
                     break;
+                }
                 if (remainingTime < 90)
                     sendCustomMessage(remainingTime + " second(s) remaining.", false, false);
                 gameController.sendCustomMessageToAll(message, false, false);
@@ -132,7 +130,7 @@ public class PlayerController {
      * @return final vote
      */
     public int vote(int numberOfCandidates, LocalTime finishingTime) {
-        sendMessage("Enter your vote:");
+        sendMessage("Enter your vote: (enter 'end' to finalize your vote)");
         int result = 0;
         while (true) {
             if (LocalTime.now().compareTo(finishingTime) >= 0)
@@ -222,8 +220,10 @@ public class PlayerController {
         if (clientHandler.isSocketClosed())
             gameController.kickPlayer(player);
         Message receivedMessage = clientHandler.getMessage();
-        if (clientHandler.isSocketClosed())
+        if (clientHandler.isSocketClosed()) {
             gameController.kickPlayer(player);
+            return null;
+        }
         if (receivedMessage == null)
             return null;
         if (player != null)
