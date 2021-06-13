@@ -89,6 +89,8 @@ public class PlayerController {
                 }
                 if (remainingTime < 90)
                     sendCustomMessage(remainingTime + " second(s) remaining.", false, false);
+                if (clientHandler.isSocketClosed())
+                    break;
                 gameController.sendCustomMessageToAll(message, false, false);
             }
         }
@@ -200,8 +202,10 @@ public class PlayerController {
     private void sendMessage(Message message) {
         if (clientHandler == null)
             return;
-        if (clientHandler.isSocketClosed())
+        if (clientHandler.isSocketClosed()) {
             gameController.kickPlayer(player);
+            return;
+        }
         clientHandler.sendMessage(message);
     }
 
@@ -220,8 +224,10 @@ public class PlayerController {
     public synchronized Message getMessage() {
         if (clientHandler == null)
             return null;
-        if (clientHandler.isSocketClosed())
+        if (clientHandler.isSocketClosed()) {
             gameController.kickPlayer(player);
+            return null;
+        }
         Message receivedMessage = clientHandler.getMessage();
         if (clientHandler.isSocketClosed()) {
             gameController.kickPlayer(player);

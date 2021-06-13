@@ -113,4 +113,12 @@ public class Client extends Thread {
             exception.printStackTrace();
         }
     }
+
+    /**
+     * send the given text to the server
+     * @param message given text
+     */
+    public void sendMessage(String message) {
+        sendMessage(new Message(message, player));
+    }
 }

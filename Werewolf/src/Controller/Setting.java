@@ -10,7 +10,7 @@ import java.time.LocalTime;
 public class Setting {
     //////////// gameplay setting \\\\\\\\\\\\\\\\\
     // total number of players
-    final static private int numberOfPlayers = 7;
+    final static private int numberOfPlayers = 3;
     // total number of mafias
     final static private int numberOfMafias = (numberOfPlayers + 1) / 3;
     // how much time does a player can talk in an introduction phase
@@ -25,6 +25,8 @@ public class Setting {
     final static private LocalTime votingTime = LocalTime.of(0, 5, 1);
     // how many times does diehard can inquire game status
     final static private int dieHardInquireCount = 2;
+
+    // TODO set settings to default
 
     ///////////////// server setting \\\\\\\\\\\\\\\\\\\\
     // sleep time in milliseconds

@@ -49,6 +49,7 @@ public class Player extends Person {
      */
     public static void main(String[] args) {
         Player player = new Player();
+        Runtime.getRuntime().addShutdownHook(new ShutdownThread(player));
         player.joinGame();
     }
 
@@ -76,6 +77,7 @@ public class Player extends Person {
         while (true) {
             clearScreen();
             System.out.println("Enter server port, you want to connect:");
+            // TODO uncomment next line to get port from player
 //            int port = inputScanner.nextInt(); inputScanner.nextLine(); // drop
             int port = 2021;
             try {
@@ -200,6 +202,14 @@ public class Player extends Person {
      */
     public int getRecordCount() {
         return recordCount;
+    }
+
+    /**
+     * client getter
+     * @return player's getter
+     */
+    public Client getClient() {
+        return client;
     }
 
     /**
