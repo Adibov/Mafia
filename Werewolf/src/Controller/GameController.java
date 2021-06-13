@@ -279,6 +279,7 @@ public class GameController {
         showAlivePlayersToGroup("All", false, false, false, true);
         startChatroom();
         holdVoting();
+        resetLastNightActions();
     }
 
     /**
@@ -335,13 +336,32 @@ public class GameController {
      * mute psychologist's target
      */
     public void mutePsychologistTarget() {
-        if (psychologistTarget != null) {
-            psychologistTarget.setMute(true);
-            sendCustomMessageToAll(
-                    psychologistTarget+ " is mute, he/she cannot talk during this day.",
-                    false, false, true
+        if (psychologistTarget == null)
+            return;
+        Player psychologist = getPlayerByRole("Psychologist");
+        psychologistTarget.setMute(true);
+        AtomicInteger finishedThread = new AtomicInteger(0);
+        int loopCount = 0;
+        for (Player player : players) {
+            playerThreads.execute(() -> {
+                if (player.equals(psychologistTarget))
+                    sendCustomMessageToPlayer(
+                            "You have been muted and cannot talk during this day.",
+                            psychologistTarget,
+                            false, false, true
+                            );
+                else
+                    sendCustomMessageToPlayer(
+                            psychologistTarget+ " has been muted, he/she cannot talk during this day.",
+                            player,
+                            false, false, true
                     );
+                finishedThread.incrementAndGet();
+            });
+            loopCount++;
         }
+        while (finishedThread.get() < loopCount)
+            sleep();
     }
 
     /**
@@ -383,7 +403,7 @@ public class GameController {
         AtomicInteger finishedThread = new AtomicInteger(0);
         for (Player player : players) {
             PlayerController playerController = playerControllers.get(player);
-            if (playerController == null)
+            if (playerController == null || player.isMute())
                 continue;
             playerThreads.execute(() -> {
                 playerController.talk(startingTime, Setting.getDiscussionPhaseTime());
@@ -454,6 +474,15 @@ public class GameController {
             killPlayerByRanking(ranking, voteCount);
         }
         System.out.println("Finished voting.");
+    }
+
+    /**
+     * reset last night actions effects such as:
+     * 1. set isMute field to false for all players
+     */
+    public void resetLastNightActions() {
+        for (Player player : players)
+            player.setMute(false);
     }
 
     /**
@@ -776,7 +805,7 @@ public class GameController {
             return null;
         }
         wakeupGroup("Psychologist", true, false, true);
-        sendCustomMessageToPlayer("Choose one player to mute, (enter 0 to cancel shooting):", psychologist, false, false, true);
+        sendCustomMessageToPlayer("Choose one player to mute, (enter 0 to cancel muting):", psychologist, false, false, true);
         LocalTime finishingTime = LocalTime.now().plusSeconds(Setting.getNightActionTime().toSecondOfDay());
         Player targetPlayer = getVote(psychologist, finishingTime, "All", "None", false);
         sendCustomGroupFilteredMessage("Psychologist is asleep.", "Psychologist", false, false, true);

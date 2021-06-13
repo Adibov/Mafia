@@ -76,15 +76,15 @@ public class PlayerController {
             long remainingTime = duration.toSecondOfDay() - (LocalTime.now().toSecondOfDay() - startingTime.toSecondOfDay());
             if (remainingTime <= 0)
                 break;
-            if (remainingTime % 5 == 0 && remainingTime != lastPrintedTime) {
-                System.out.println("Remaining time: " + remainingTime);
-                lastPrintedTime = remainingTime;
-            }
+//            if (remainingTime % 5 == 0 && remainingTime != lastPrintedTime) {
+//                System.out.println("Remaining time: " + remainingTime);
+//                lastPrintedTime = remainingTime;
+//            }
 
             if (!clientHandler.isStreamEmpty()) {
                 Message message = getMessage();
                 if (message.getBody().equals("end")) { // user wants to end his speaking
-                    sendMessage("Your speak has ended, please wait until other players' turn ");
+                    sendMessage("- Your speak has ended, please wait until other players' turn ");
                     break;
                 }
                 if (remainingTime < 90)
@@ -130,6 +130,7 @@ public class PlayerController {
      * @return final vote
      */
     public int vote(int numberOfCandidates, LocalTime finishingTime) {
+        clearStream();
         sendMessage("Enter your vote: (enter 'end' to finalize your vote)");
         int result = 0;
         while (true) {
@@ -143,8 +144,10 @@ public class PlayerController {
                 break;
             try {
                 int tmp = Integer.parseInt(vote);
-                if (0 <= tmp && tmp <= numberOfCandidates)
+                if (0 <= tmp && tmp <= numberOfCandidates) {
                     result = tmp;
+                    sendMessage("- You have entered " + result + ".");
+                }
                 else
                     sendMessage("Invalid input.");
             }
