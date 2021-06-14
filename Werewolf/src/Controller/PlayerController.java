@@ -1,6 +1,8 @@
 package Controller;
 
 import Utils.FileUtils;
+import Utils.Message;
+import Utils.Setting;
 
 import java.io.IOException;
 import java.time.LocalTime;
@@ -97,7 +99,7 @@ public class PlayerController {
                     sendCustomMessage(remainingTime + " second(s) remaining.", false, false);
                 if (clientHandler.isSocketClosed())
                     break;
-                gameController.sendCustomMessageToAll(message, false, false);
+                gameController.sendCustomMessageToAll(message.getBody() + "\n", false, false);
             }
         }
 //        System.out.println(player + " finished");
@@ -241,6 +243,7 @@ public class PlayerController {
             receivedMessage.setSender(player);
         if (receivedMessage.getBody().equals("HISTORY")) {
             showMessageHistory();
+            sendMessage("Message history review finished.\n");
             return null;
         }
         return receivedMessage;
@@ -278,6 +281,12 @@ public class PlayerController {
      * enter message history mode and let player watch old messages
      */
     public void showMessageHistory() {
+        if (fileUtils.isStreamEmpty()) {
+            sendMessage("History is empty.");
+            return;
+        }
+
+        sendMessage("\nOld messages history: (Enter 'end' to exit or press Enter to continue)");
         Message readMessage;
         LocalTime finishingTime = LocalTime.now().plusSeconds(Setting.getHistoryReviewTime().toSecondOfDay());
         while (!fileUtils.isStreamEmpty() && LocalTime.now().compareTo(finishingTime) < 0) {
@@ -287,7 +296,6 @@ public class PlayerController {
             if (readMessage.getSender().getUsername().equals("God")) // refuse to show messages from god
                 continue;
             sendMessage(readMessage);
-            sendMessage("Enter 'end' to exit watching history or press Enter to continue:");
             String option = getMessage().getBody();
             if (option.equals("end"))
                 break;

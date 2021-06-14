@@ -1,4 +1,7 @@
-package Controller;
+package Utils;
+
+import Controller.Client;
+import Controller.Player;
 
 /**
  * ShutdownThread close output stream when player wants to exit program

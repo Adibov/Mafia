@@ -136,7 +136,6 @@ public class FileUtils {
             return null;
 
         try {
-            System.out.println("Hey: " + fileInputStream.available());
             readObject = objectInputStream.readObject();
         }
         catch (IOException | ClassNotFoundException exception) {

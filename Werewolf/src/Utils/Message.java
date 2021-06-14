@@ -1,13 +1,10 @@
-package Controller;
+package Utils;
+
+import Controller.Person;
+import Utils.DAYTIME;
 
 import java.io.Serializable;
-import java.time.LocalDate;
 import java.time.LocalTime;
-
-enum DAYTIME implements Serializable {
-    DAY,
-    NIGHT
-}
 
 /**
  * Message class, represents messages between persons
