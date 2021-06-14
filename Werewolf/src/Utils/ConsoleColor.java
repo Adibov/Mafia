@@ -8,14 +8,21 @@ public class ConsoleColor {
 //            ConsoleColor.BLUE,
             ConsoleColor.PURPLE,
             ConsoleColor.CYAN,
-            ConsoleColor.WHITE,
+//            ConsoleColor.WHITE,
             ConsoleColor.RED_BOLD,
             ConsoleColor.GREEN_BOLD,
             ConsoleColor.YELLOW_BOLD,
             ConsoleColor.BLUE_BOLD,
             ConsoleColor.PURPLE_BOLD,
             ConsoleColor.CYAN_BOLD,
-            ConsoleColor.WHITE_BOLD
+            ConsoleColor.WHITE_BOLD,
+            ConsoleColor.RED_BRIGHT,
+            ConsoleColor.GREEN_BRIGHT,
+            ConsoleColor.YELLOW_BRIGHT,
+            ConsoleColor.BLUE_BRIGHT,
+            ConsoleColor.PURPLE_BRIGHT,
+            ConsoleColor.CYAN_BRIGHT,
+            ConsoleColor.WHITE_BRIGHT
     };
     // Reset
     public static final String RESET = "\033[0m";  // Text Reset

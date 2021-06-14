@@ -1,10 +1,7 @@
 package Controller;
 
 import Roles.*;
-import Utils.FileUtils;
-import Utils.Message;
-import Utils.Setting;
-import Utils.ShutdownThread;
+import Utils.*;
 
 import java.io.IOException;
 import java.util.Scanner;
@@ -44,16 +41,6 @@ public class Player extends Person {
     }
 
     /**
-     * main method, to make class runnable
-     * @param args program args
-     */
-    public static void main(String[] args) {
-        Player player = new Player();
-        Runtime.getRuntime().addShutdownHook(new ShutdownThread(player));
-        player.joinGame();
-    }
-
-    /**
      * join to the game
      */
     public void joinGame() {
@@ -76,20 +63,20 @@ public class Player extends Person {
     public void connectToGame() {
         while (true) {
             clearScreen();
-            System.out.println("Enter server port, you want to connect:");
+            System.out.println(ConsoleColor.BLUE_BOLD_BRIGHT + "Enter server port, you want to connect:" + ConsoleColor.RESET);
             // TODO uncomment next line to get port from player
-//            int port = inputScanner.nextInt(); inputScanner.nextLine(); // drop
-            int port = 2021;
+            int port = inputScanner.nextInt(); inputScanner.nextLine(); // drop
+//            int port = 2021;
             try {
                 client = new Client(this, port); // connection to the server established
                 clearScreen();
-                System.out.println("Connection established successfully.");
+                System.out.println(ConsoleColor.GREEN_BOLD_BRIGHT + "Connection established successfully." + ConsoleColor.RESET);
                 getCh();
                 break;
             }
             catch (IOException exception) {
                 clearScreen();
-                System.out.println("No such server with the entered port founded.");
+                System.out.println(ConsoleColor.RED + "No such server with the entered port founded." + ConsoleColor.RESET);
                 getCh();
             }
         }

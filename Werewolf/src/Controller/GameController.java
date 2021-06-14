@@ -95,6 +95,7 @@ public class GameController {
      * waits until all player join to the game
      */
     public void startWaitingLobby() {
+        System.out.println(ConsoleColor.CYAN_BOLD_BRIGHT + "Waiting for players to join." + ConsoleColor.RESET);
         int whileLoopCount = 0;
         AtomicInteger numberOfPlayers = new AtomicInteger(0); // define Atomic to make it usable in the following lambda function
         while (whileLoopCount < Setting.getNumberOfPlayers()) {
@@ -121,7 +122,7 @@ public class GameController {
         while (players.size() < Setting.getNumberOfPlayers()) // waits until all players have joined to the game
             sleep();
 //        sendCustomMessageToAll("All players have joined the game.", true, true);
-        System.out.println("All players have joined the game.");
+        System.out.println(ConsoleColor.CYAN_BOLD_BRIGHT + "All players have joined the game." + ConsoleColor.RESET);
     }
 
     /**
@@ -129,7 +130,7 @@ public class GameController {
      * DESCRIPTION: god distribute roles, based on the number of players/mafias
      */
     public void distributeRoles() {
-        System.out.println("Starting to distribute roles.");
+        System.out.println(ConsoleColor.CYAN_BOLD_BRIGHT + "Starting to distribute roles." + ConsoleColor.RESET);
 //        sendCustomMessageToAll("God is distributing roles, please wait...", true, true);
         randomShuffle(players);
 
@@ -200,7 +201,7 @@ public class GameController {
         players = newPlayers;
         randomShuffle(players); // so that players can't discover other players' role by their talking turn :))
 //        sendCustomMessageToAll("Roles distribution has been finished.", true, true);
-        System.out.println("Roles distribution has been finished.");
+        System.out.println(ConsoleColor.CYAN_BOLD_BRIGHT + "Roles distribution has been finished." + ConsoleColor.RESET);
     }
 
     /**
