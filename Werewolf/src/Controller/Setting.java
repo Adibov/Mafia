@@ -25,6 +25,8 @@ public class Setting {
     final static private LocalTime votingTime = LocalTime.of(0, 5, 1);
     // how many times does diehard can inquire game status
     final static private int dieHardInquireCount = 2;
+    // how much time does a player can watch history for each turn
+    final static private LocalTime historyReviewTime = LocalTime.of(0, 0, 30);
 
     // TODO set settings to default
 
@@ -120,5 +122,13 @@ public class Setting {
      */
     public static int getDieHardInquireCount() {
         return dieHardInquireCount;
+    }
+
+    /**
+     * historyReviewTime getter
+     * @return historyReviewTime
+     */
+    public static LocalTime getHistoryReviewTime() {
+        return historyReviewTime;
     }
 }

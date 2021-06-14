@@ -14,6 +14,7 @@ public class PlayerController {
     private Player player;
     private ClientHandler clientHandler;
     private final GameController gameController;
+    private FileUtils fileUtils;
 
     /**
      * class constructor
@@ -86,6 +87,8 @@ public class PlayerController {
 
             if (!clientHandler.isStreamEmpty()) {
                 Message message = getMessage();
+                if (message == null)
+                    continue;
                 if (message.getBody().equals("end")) { // user wants to end his speaking
                     sendMessage("- Your speak has ended, please wait until other players' turn will finish.");
                     break;
@@ -208,7 +211,8 @@ public class PlayerController {
         if (!checkConnection())
             return;
         clientHandler.sendMessage(message);
-        FileUtils.writeToFile(message, player.getFileDirectory());
+        if (fileUtils != null)
+            fileUtils.writeToFile(message);
     }
 
     /**
@@ -235,6 +239,10 @@ public class PlayerController {
             return null;
         if (player != null)
             receivedMessage.setSender(player);
+        if (receivedMessage.getBody().equals("HISTORY")) {
+            showMessageHistory();
+            return null;
+        }
         return receivedMessage;
     }
 
@@ -267,6 +275,26 @@ public class PlayerController {
     }
 
     /**
+     * enter message history mode and let player watch old messages
+     */
+    public void showMessageHistory() {
+        Message readMessage;
+        LocalTime finishingTime = LocalTime.now().plusSeconds(Setting.getHistoryReviewTime().toSecondOfDay());
+        while (!fileUtils.isStreamEmpty() && LocalTime.now().compareTo(finishingTime) < 0) {
+            readMessage = (Message) fileUtils.readFromFile();
+            if (readMessage == null)
+                break;
+            if (readMessage.getSender().getUsername().equals("God")) // refuse to show messages from god
+                continue;
+            sendMessage(readMessage);
+            sendMessage("Enter 'end' to exit watching history or press Enter to continue:");
+            String option = getMessage().getBody();
+            if (option.equals("end"))
+                break;
+        }
+    }
+
+    /**
      * clear input stream in clientHandler so old messages will be deleted
      */
     public void clearStream() {
@@ -294,6 +322,22 @@ public class PlayerController {
      */
     public Player getPlayer() {
         return player;
+    }
+
+    /**
+     * fileUtils getter
+     * @return fileUtils
+     */
+    public FileUtils getFileUtils() {
+        return fileUtils;
+    }
+
+    /**
+     * fileUtils setter
+     * @param fileUtils fileUtils new value
+     */
+    public void setFileUtils(FileUtils fileUtils) {
+        this.fileUtils = fileUtils;
     }
 
     /**

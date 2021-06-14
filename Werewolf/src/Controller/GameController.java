@@ -32,7 +32,7 @@ public class GameController {
     private Player sniperTarget;
     private Player psychologistTarget;
     private boolean dieHardHasInquire;
-    // dead players information:
+    // dead players' information:
     private ArrayList<Player> deadPlayers;
 
     /**
@@ -88,11 +88,12 @@ public class GameController {
         startWaitingLobby();
         distributeRoles();
         String gameTutorial = """
-                Welcome to Mafia game, where players distribute into two groups called Mafia and Citizen. Each player in
-                every team wants to make his team to win. In this process mafias kill citizens one after another! and
+                Welcome to Mafia, a game where players distribute into two groups called Mafia and Citizen. Each player
+                in every team wants to make his team to win. In this process mafias kill citizens one after another! and
                 Citizens have to identify Mafias from Citizens and vote them to kick out of the game. Game will continue
                 until either all Mafias have been killed or number of remaining Mafias is equals to number of remaining
                 Citizens. Wish you have a good time playing this game :D
+                
                 Press Enter whenever you're ready to start game.
                 """;
         sendCustomMessageToAll(gameTutorial, true, true, true);
@@ -203,7 +204,7 @@ public class GameController {
             sleep();
         }
         players = newPlayers;
-        randomShuffle(players); // so that players can't discover other players role by their talking turn :))
+        randomShuffle(players); // so that players can't discover other players' role by their talking turn :))
 //        sendCustomMessageToAll("Roles distribution has been finished.", true, true);
         System.out.println("Roles distribution has been finished.");
     }
@@ -245,12 +246,16 @@ public class GameController {
         for (Player player : players) {
             String fileDirectory = player.getFileDirectory();
             FileUtils.createFile(fileDirectory);
+            PlayerController playerController = playerControllers.get(player);
+            if (playerController == null)
+                continue;
+            playerController.setFileUtils(new FileUtils(player.getFileDirectory()));
         }
     }
 
     /**
      * start introduction day.
-     * DESCRIPTION: in this day, players talk in turn and introduce themself to the other players.
+     * DESCRIPTION: in this day, players talk in turn and introduce themselves to the other players.
      */
     public void startIntroductionDay() {
         showAlivePlayersToServer();
@@ -306,7 +311,7 @@ public class GameController {
      * PHASES:
      * 1. wakeup all players
      * 2. report last night events
-     * 3. let them discuss about themself/events
+     * 3. let them discuss themselves/events
      * 4. hold a voting for kicking a player
      */
     public void startRegularDay() {
@@ -589,7 +594,7 @@ public class GameController {
     /**
      * kill players by the given ranking.
      * ATTENTION: among those players with the most voting count, player with the most record count will die. if
-     * at least two of those players have the same record count, NO ONE WILL DIE THIS TURN. And record count of those
+     * at least two of those players have the same record count, NO ONE WILL DIE THIS TURN, And record count of those
      * players who reached among the candidates will also increment by one.
      * @param ranking ranking list ordered by voting count
      * @param voteCount maps each player to his vote count
@@ -997,7 +1002,7 @@ public class GameController {
     }
 
     /**
-     * check if game if finished
+     * check if game is finished
      * @return boolean result
      */
     public boolean isGameFinished() {
@@ -1014,7 +1019,7 @@ public class GameController {
 
     /**
      * kick the given player out of the game.
-     * a player will kicked out of the game, when either disconnected or left the game
+     * a player will kick out of the game, when either disconnected or left the game
      * @param player given player
      */
     public void kickPlayer(Player player) {
@@ -1280,7 +1285,7 @@ public class GameController {
 
     /**
      * sleep server for a given time
-     * @param delayTime given time in milli seconds
+     * @param delayTime given time in milliseconds
      */
     public void sleep(long delayTime) {
         try {

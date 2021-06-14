@@ -6,12 +6,32 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 /**
- * handle operations(read/write) on files
+ * handle reading, writing etc on files
  * @author Adibov
  * @version 1.0
  */
 public class FileUtils {
-    final private static String fileSeparator = System.getProperty("file.separator");
+    private ObjectOutputStream objectOutputStream;
+    private ObjectInputStream objectInputStream;
+    private FileOutputStream fileOutputStream;
+    private FileInputStream fileInputStream;
+
+    /**
+     * class constructor
+     * @param relativePath relativePath of the file that this object has to interact with
+     */
+    public FileUtils(String relativePath) {
+        String absolutePath = FileUtils.getAbsolutePath(relativePath);
+        try {
+            fileOutputStream = new FileOutputStream(relativePath);
+            fileInputStream = new FileInputStream(relativePath);
+            objectOutputStream = new ObjectOutputStream(fileOutputStream);
+            objectInputStream = new ObjectInputStream(fileInputStream);
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     /**
      * get absolute path from given relative path
@@ -74,7 +94,7 @@ public class FileUtils {
      * @return file separator
      */
     public static String getFileSeparator() {
-        return fileSeparator;
+        return System.getProperty("file.separator");
     }
 
     /**
@@ -94,14 +114,11 @@ public class FileUtils {
     }
 
     /**
-     * write the given object to the file with the given relativePath
+     * write the given object to the file
      * @param object object file
-     * @param relativePath file relativePath
      */
-    public static void writeToFile(Object object, String relativePath) {
-        String absolutePath = FileUtils.getAbsolutePath(relativePath);
-        try (FileOutputStream fileOutputStream = new FileOutputStream(absolutePath)) {
-            ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream);
+    public synchronized void writeToFile(Object object) {
+        try {
             objectOutputStream.writeObject(object);
         }
         catch (IOException exception) {
@@ -110,21 +127,36 @@ public class FileUtils {
     }
 
     /**
-     * read a serializable object from the given relativePath
-     * @param relativePath given relativePath
-     * @return result Object, returns null if cannot read any object
+     * read a serializable object from the file
+     * @return read Object, returns null if cannot read any object
      */
-    public static Object readFromFile(String relativePath) {
+    public synchronized Object readFromFile() {
         Object readObject = null;
-        String absolutePath = FileUtils.getAbsolutePath(relativePath);
-        try (FileInputStream fileInputStream = new FileInputStream(absolutePath)) {
-            ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
+        if (isStreamEmpty())
+            return null;
+
+        try {
+            System.out.println("Hey: " + fileInputStream.available());
             readObject = objectInputStream.readObject();
         }
         catch (IOException | ClassNotFoundException exception) {
             exception.printStackTrace();
         }
         return readObject;
+    }
+
+    /**
+     * check if stream is empty
+     * @return true, if stream is empty
+     */
+    public boolean isStreamEmpty() {
+        try {
+            return fileInputStream.available() == 0;
+        }
+        catch (IOException exception) {
+            exception.printStackTrace();
+        }
+        return false;
     }
 }
 
