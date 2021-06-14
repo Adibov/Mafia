@@ -1,6 +1,7 @@
 package Controller;
 
 import Roles.*;
+import Utils.FileUtils;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -210,6 +211,14 @@ public class Player extends Person {
      */
     public Client getClient() {
         return client;
+    }
+
+    /**
+     * get the file directory in which the messages will be saved
+     * @return file directory
+     */
+    public String getFileDirectory() {
+        return "Files" + FileUtils.getFileSeparator() + username + ".bin";
     }
 
     /**

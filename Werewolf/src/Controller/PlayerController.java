@@ -1,5 +1,7 @@
 package Controller;
 
+import Utils.FileUtils;
+
 import java.io.IOException;
 import java.time.LocalTime;
 
@@ -206,6 +208,7 @@ public class PlayerController {
         if (!checkConnection())
             return;
         clientHandler.sendMessage(message);
+        FileUtils.writeToFile(message, player.getFileDirectory());
     }
 
     /**

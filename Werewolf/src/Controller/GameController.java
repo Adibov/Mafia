@@ -87,7 +87,15 @@ public class GameController {
     public void startPreparationDay() {
         startWaitingLobby();
         distributeRoles();
-        sendCustomMessageToAll("Press Enter whenever you're ready to start game.", true, true, true);
+        String gameTutorial = """
+                Welcome to Mafia game, where players distribute into two groups called Mafia and Citizen. Each player in
+                every team wants to make his team to win. In this process mafias kill citizens one after another! and
+                Citizens have to identify Mafias from Citizens and vote them to kick out of the game. Game will continue
+                until either all Mafias have been killed or number of remaining Mafias is equals to number of remaining
+                Citizens. Wish you have a good time playing this game :D
+                Press Enter whenever you're ready to start game.
+                """;
+        sendCustomMessageToAll(gameTutorial, true, true, true);
         dayNumber++;
     }
 
@@ -235,7 +243,7 @@ public class GameController {
         FileUtils.createFolder(filesDirectory);
 
         for (Player player : players) {
-            String fileDirectory = "Files" + FileUtils.getFileSeparator() + player.getUsername();
+            String fileDirectory = player.getFileDirectory();
             FileUtils.createFile(fileDirectory);
         }
     }
