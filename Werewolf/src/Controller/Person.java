@@ -9,6 +9,7 @@ import java.io.Serializable;
  */
 abstract public class Person implements Serializable {
     final protected String username;
+    private String preferredColor;
 
     /**
      * class constructor
@@ -33,5 +34,21 @@ abstract public class Person implements Serializable {
     @Override
     public String toString() {
         return username;
+    }
+
+    /**
+     * preferredColor getter
+     * @return preferredColor
+     */
+    public String getPreferredColor() {
+        return preferredColor;
+    }
+
+    /**
+     * preferredColor setter
+     * @param preferredColor preferredColor's new value
+     */
+    public void setPreferredColor(String preferredColor) {
+        this.preferredColor = preferredColor;
     }
 }

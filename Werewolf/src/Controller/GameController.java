@@ -1,10 +1,7 @@
 package Controller;
 
 import Roles.*;
-import Utils.DAYTIME;
-import Utils.FileUtils;
-import Utils.Message;
-import Utils.Setting;
+import Utils.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -90,16 +87,7 @@ public class GameController {
     public void startPreparationDay() {
         startWaitingLobby();
         distributeRoles();
-        String gameTutorial = """
-                Welcome to Mafia, a game where players distribute into two groups called Mafia and Citizen. Each player
-                in every team wants to make his team to win. In this process mafias kill citizens one after another! and
-                Citizens have to identify Mafias from Citizens and vote them to kick out of the game. Game will continue
-                until either all Mafias have been killed or number of remaining Mafias is equals to number of remaining
-                Citizens. Wish you have a good time playing this game :D
-                
-                Press Enter whenever you're ready to start game.
-                """;
-        sendCustomMessageToAll(gameTutorial, true, true, true);
+        showTutorial();
         dayNumber++;
     }
 
@@ -111,6 +99,7 @@ public class GameController {
         AtomicInteger numberOfPlayers = new AtomicInteger(0); // define Atomic to make it usable in the following lambda function
         while (whileLoopCount < Setting.getNumberOfPlayers()) {
             PlayerController newPlayerController = new PlayerController(this);
+            int finalWhileLoopCount = whileLoopCount;
             playerThreads.execute(() -> {
                 newPlayerController.registerPlayer();
                 Player newPlayer = null;
@@ -165,6 +154,7 @@ public class GameController {
             newPlayers.add(newRole);
             playerControllers.put(newRole, playerController);
             playerController.setPlayer(newRole);
+            newRole.setPreferredColor(ConsoleColor.COLORS[i]);
         }
         for (int i = numberOfMafias; i < numberOfPlayers; i++) {
             int citizenIndex = i - numberOfMafias;
@@ -204,6 +194,7 @@ public class GameController {
             newPlayers.add(newRole);
             playerControllers.put(newRole, playerController);
             playerController.setPlayer(newRole);
+            newRole.setPreferredColor(ConsoleColor.COLORS[i]);
             sleep();
         }
         players = newPlayers;
@@ -224,6 +215,23 @@ public class GameController {
             list.set(index, list.get(i));
             list.set(i, tmp);
         }
+    }
+
+    /**
+     * show tutorial to players and start game
+     */
+    public void showTutorial() {
+        String gameTutorial = """
+                Welcome to Mafia, a game where players distribute into two groups called Mafia and Citizen. Each player
+                in every team wants to make his team to win. In this process mafias kill citizens one after another! and
+                Citizens have to identify Mafias from Citizens and vote them to kick out of the game. Game will continue
+                until either all Mafias have been killed or number of remaining Mafias is equals to number of remaining
+                Citizens. Wish you have a good time playing this game :D
+                
+                Press Enter whenever you're ready to start game.
+                """;
+        Message message = new Message(gameTutorial, God.getInstance(), ConsoleColor.CYAN_BOLD_BRIGHT);
+        sendCustomMessageToAll(message, true, true, true);
     }
 
     /**
@@ -1109,11 +1117,14 @@ public class GameController {
      * show alive players to the server
      */
     public void showAlivePlayersToServer() {
-        System.out.println("\n\nAlive players:");
+        System.out.println(ConsoleColor.BLUE_BOLD_BRIGHT + "\n\nAlive players:" + ConsoleColor.RESET);
         for (Player player : players)
             if (player.isAlive()) {
                 int spaceCount = 15 - player.toString().length();
-                System.out.println(player + ":" + " ".repeat(spaceCount) + player.getRole());
+                System.out.println(
+                        ConsoleColor.YELLOW + player + ":" + " ".repeat(spaceCount) + ConsoleColor.WHITE_BOLD_BRIGHT +
+                        player.getRole() + ConsoleColor.RESET
+                );
             }
     }
 

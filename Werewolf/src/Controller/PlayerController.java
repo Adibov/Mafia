@@ -99,7 +99,8 @@ public class PlayerController {
                     sendCustomMessage(remainingTime + " second(s) remaining.", false, false);
                 if (clientHandler.isSocketClosed())
                     break;
-                gameController.sendCustomMessageToAll(message.getBody() + "\n", false, false);
+                message.appendBody("\n");
+                gameController.sendCustomMessageToAll(message, false, false);
             }
         }
 //        System.out.println(player + " finished");
@@ -208,6 +209,9 @@ public class PlayerController {
      * @param message given message
      */
     private void sendMessage(Message message) {
+        if (message.getSender() != null && message.getSender().getPreferredColor() != null) {
+            message.setBodyColor(message.getSender().getPreferredColor());
+        }
         if (clientHandler == null)
             return;
         if (!checkConnection())
