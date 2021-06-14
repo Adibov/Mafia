@@ -1,7 +1,9 @@
 package Controller;
 
 import Roles.*;
+import Utils.FileUtils;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.time.LocalTime;
@@ -62,8 +64,10 @@ public class GameController {
      * start game from the current state
      */
     public void startGame() {
-        if (dayNumber == 0)
+        if (dayNumber == 0) {
             startPreparationDay();
+            makeInitFiles();
+        }
         if (dayNumber == 1) {
             startIntroductionDay();
             startFirstNight();
@@ -211,6 +215,32 @@ public class GameController {
     }
 
     /**
+     * make init files and make them ready to be written/read
+     * DESCRIPTION:
+     * 1. check if 'Files' folder exits, if not make a new folder with same name
+     * 2. delete all files that are located in 'Files' folder
+     * 3. make a new binary file for each player so server can save their chat in it
+     */
+    public void makeInitFiles() {
+        String filesDirectory = "Files";
+        if (FileUtils.isFolderExists(filesDirectory)) {
+            File files = new File(FileUtils.getAbsolutePath(filesDirectory));
+            if (files.listFiles() != null) {
+                //noinspection ConstantConditions
+                for (File file : files.listFiles())
+                    FileUtils.deleteFile(file.getAbsolutePath());
+            }
+            FileUtils.deleteFile(filesDirectory);
+        }
+        FileUtils.createFolder(filesDirectory);
+
+        for (Player player : players) {
+            String fileDirectory = "Files" + FileUtils.getFileSeparator() + player.getUsername();
+            FileUtils.createFile(fileDirectory);
+        }
+    }
+
+    /**
      * start introduction day.
      * DESCRIPTION: in this day, players talk in turn and introduce themself to the other players.
      */
@@ -338,7 +368,6 @@ public class GameController {
     public void mutePsychologistTarget() {
         if (psychologistTarget == null)
             return;
-        Player psychologist = getPlayerByRole("Psychologist");
         psychologistTarget.setMute(true);
         AtomicInteger finishedThread = new AtomicInteger(0);
         int loopCount = 0;
@@ -403,7 +432,7 @@ public class GameController {
         AtomicInteger finishedThread = new AtomicInteger(0);
         for (Player player : players) {
             PlayerController playerController = playerControllers.get(player);
-            if (playerController == null || player.isMute())
+            if (playerController == null || player.isMute() || !player.isAlive())
                 continue;
             playerThreads.execute(() -> {
                 playerController.talk(startingTime, Setting.getDiscussionPhaseTime());
@@ -985,10 +1014,10 @@ public class GameController {
             return;
         // **do not change the order of the following 4 lines, unless program will raise runtime error.**
         sendCustomMessageToPlayer("EXIT", player, false, false, true);
+        deadPlayers.add(player);
         players.remove(player);
         playerControllers.remove(player);
-        deadPlayers.add(player);
-        sendCustomMessageToAll("\n" + player + " has been kicked out/disconnected from the game.\n", true, false, true);
+        sendCustomMessageToAll("\n" + player + " has left the game.\n", true, false, true);
     }
 
     /**

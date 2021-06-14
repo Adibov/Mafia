@@ -74,11 +74,10 @@ public class Client extends Thread {
      * close socket
      */
     public void closeSocket() {
-        if (socket.isClosed())
-            return;
         try {
             socket.close();
-        } catch (IOException exception) {
+        }
+        catch (IOException exception) {
             exception.printStackTrace();
         }
     }

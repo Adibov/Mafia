@@ -50,7 +50,7 @@ public class ClientHandler {
      * @return received message
      */
     public synchronized Message getMessage() {
-        Message receivedMessage = null;
+        Message receivedMessage;
         while (true) {
             if (isSocketClosed())
                 return null;

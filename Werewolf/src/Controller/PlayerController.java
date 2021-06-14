@@ -71,8 +71,9 @@ public class PlayerController {
      */
     public void talk(LocalTime startingTime, LocalTime duration) {
         clearStream();
-        long lastPrintedTime = 0;
-        while (true) {
+        // TODO uncomment following lines it you want
+//        long lastPrintedTime = 0;
+        while (checkConnection()) {
             long remainingTime = duration.toSecondOfDay() - (LocalTime.now().toSecondOfDay() - startingTime.toSecondOfDay());
             if (remainingTime <= 0)
                 break;
@@ -84,7 +85,7 @@ public class PlayerController {
             if (!clientHandler.isStreamEmpty()) {
                 Message message = getMessage();
                 if (message.getBody().equals("end")) { // user wants to end his speaking
-                    sendMessage("- Your speak has ended, please wait until other players' turn ");
+                    sendMessage("- Your speak has ended, please wait until other players' turn will finish.");
                     break;
                 }
                 if (remainingTime < 90)
@@ -135,7 +136,7 @@ public class PlayerController {
         clearStream();
         sendMessage("Enter your vote: (enter 'end' to finalize your vote)");
         int result = 0;
-        while (true) {
+        while (checkConnection()) {
             if (LocalTime.now().compareTo(finishingTime) >= 0)
                 break;
             if (clientHandler.isStreamEmpty())
@@ -202,10 +203,8 @@ public class PlayerController {
     private void sendMessage(Message message) {
         if (clientHandler == null)
             return;
-        if (clientHandler.isSocketClosed()) {
-            gameController.kickPlayer(player);
+        if (!checkConnection())
             return;
-        }
         clientHandler.sendMessage(message);
     }
 
@@ -224,15 +223,11 @@ public class PlayerController {
     public synchronized Message getMessage() {
         if (clientHandler == null)
             return null;
-        if (clientHandler.isSocketClosed()) {
-            gameController.kickPlayer(player);
+        if (!checkConnection())
             return null;
-        }
         Message receivedMessage = clientHandler.getMessage();
-        if (clientHandler.isSocketClosed()) {
-            gameController.kickPlayer(player);
-            return null;
-        }
+        if (!checkConnection())
+            return receivedMessage;
         if (receivedMessage == null)
             return null;
         if (player != null)
@@ -275,6 +270,19 @@ public class PlayerController {
         if (clientHandler == null)
             return;
         clientHandler.clearStream();
+    }
+
+    /**
+     * check if client is still connected to the server, if disconnected will kick him out of the game
+     * @return true if client is still connected to the server
+     */
+    public boolean checkConnection() {
+        if (clientHandler.isSocketClosed()) {
+            if (player != null)
+                gameController.kickPlayer(player);
+            return false;
+        }
+        return true;
     }
 
     /**

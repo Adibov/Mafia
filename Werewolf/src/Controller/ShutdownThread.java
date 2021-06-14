@@ -26,6 +26,7 @@ public class ShutdownThread extends Thread {
         if (client == null)
             return;
         client.sendMessage("exit");
+        client.setServerUp(false);
         client.closeSocket();
     }
 }
