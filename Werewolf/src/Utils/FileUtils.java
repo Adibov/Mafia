@@ -65,7 +65,6 @@ public class FileUtils {
      */
     public static boolean isFolderExists(String relativePath) {
         String absolutePath = FileUtils.getAbsolutePath(relativePath);
-        System.out.println(absolutePath);
         File file = new File(absolutePath);
         return file.isDirectory();
     }
