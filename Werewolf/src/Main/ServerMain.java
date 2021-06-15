@@ -81,7 +81,7 @@ public class ServerMain {
     public int getOption(int numberOfOptions) {
         int option;
         while (true) {
-            System.out.println(ConsoleColor.CYAN_BOLD_BRIGHT + "Please choose and option:" + ConsoleColor.RESET);
+            System.out.println(ConsoleColor.CYAN_BOLD_BRIGHT + "Please choose an option:" + ConsoleColor.RESET);
             option = inputScanner.nextInt(); inputScanner.nextLine(); // drop
             if (option < 1 || option > numberOfOptions) {
                 System.out.println(ConsoleColor.RED + "Invalid input" + ConsoleColor.RESET);

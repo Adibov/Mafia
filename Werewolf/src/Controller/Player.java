@@ -17,6 +17,7 @@ public class Player extends Person {
     private boolean isAlive;
     private boolean isAwake;
     private boolean isMute; // if true, cannot speak in the middle of day
+    private boolean hasLeftGame;
     private int recordCount; // how many times does the player have been suspected in voting phase
 
     /**
@@ -26,6 +27,7 @@ public class Player extends Person {
         super("");
         isAlive = true;
         isAwake = true;
+        hasLeftGame = false;
         recordCount = 0;
     }
 
@@ -37,6 +39,7 @@ public class Player extends Person {
         super(username);
         isAlive = true;
         isAwake = true;
+        hasLeftGame = false;
         recordCount = 0;
     }
 
@@ -200,6 +203,14 @@ public class Player extends Person {
     }
 
     /**
+     * hasLeftGame getter
+     * @return hasLeftGame
+     */
+    public boolean hasLeftGame() {
+        return hasLeftGame;
+    }
+
+    /**
      * get the file directory in which the messages will be saved
      * @return file directory
      */
@@ -236,6 +247,14 @@ public class Player extends Person {
      */
     public void incrementRecordCount() {
         recordCount++;
+    }
+
+    /**
+     * hasLeftGame setter
+     * @param hasLeftGame hasLeftGame
+     */
+    public void setHasLeftGame(boolean hasLeftGame) {
+        this.hasLeftGame = hasLeftGame;
     }
 
     /**

@@ -234,7 +234,7 @@ public class PlayerController {
      * @return entered message
      */
     public synchronized Message getMessage() {
-        if (clientHandler == null)
+        if (clientHandler == null || (player != null && player.hasLeftGame()))
             return null;
         if (!checkConnection())
             return null;
@@ -260,6 +260,8 @@ public class PlayerController {
      * @param callGetCh call getCh method after sending
      */
     public synchronized void sendCustomMessage(Message message, boolean callClearScreen, boolean callGetCh) {
+        if (player != null && player.hasLeftGame())
+            return;
         if (callClearScreen)
             clearScreen();
         sendMessage(message);
