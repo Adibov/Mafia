@@ -276,9 +276,9 @@ public class GameController {
                     true, false);
         for (Player player : players) {
             PlayerController playerController = playerControllers.get(player);
-            if (playerController == null)
+            if (playerController == null || player.hasLeftGame())
                 continue;
-            sendCustomMessageToPlayer("It's your turn now, enter 'stop' to finish your turn.", player, false, false);
+            sendCustomMessageToPlayer("It's your turn now, enter 'end' to finish your turn.", player, false, false);
             playerController.talk(Setting.getIntroductionTurnTime());
             sendCustomMessageToPlayer("Your turn has been finished.", player, false, false);
         }
@@ -637,6 +637,10 @@ public class GameController {
             index++;
         }
 
+//        if (voteCount.get(ranking.get(0)) < (getAlivePlayersCount() + 1) / 2) { // at least half of the players should vote
+//            sendCustomMessageToAll("No one will die this turn.", true, true, true);
+//            return;
+//        }
         Player resultPlayer = ranking.get(0);
         int maximumCount = 0;
         for (int i = 0; i < index; i++) {
@@ -1028,7 +1032,7 @@ public class GameController {
      * @return boolean result
      */
     public boolean isUsernameValid(String username) {
-        return username.length() > 3;
+        return username.length() > 2;
     }
 
     /**
@@ -1129,7 +1133,7 @@ public class GameController {
                 boolean finalCallGetCh = callGetCh;
                 boolean finalWaitForResponse = waitForResponse;
                 playerThreads.execute(() -> {
-                    showAlivePlayersToPlayer(player, showRoles, false, finalCallClearScreen, finalCallGetCh, finalWaitForResponse);
+                    showAlivePlayersToPlayer(player, showRoles, true, finalCallClearScreen, finalCallGetCh, finalWaitForResponse);
                     finishedThread.incrementAndGet();
                 });
                 loopCounter++;
@@ -1167,7 +1171,7 @@ public class GameController {
         if (options.length > 1)
             callGetCh = options[1];
         PlayerController playerController = playerControllers.get(player);
-        if (playerController == null)
+        if (playerController == null || player.hasLeftGame())
             return;
         AtomicBoolean threadFinished = new AtomicBoolean(false); // define atomic to make it usable in lambda
         boolean finalCallClearScreen = callClearScreen;
@@ -1317,6 +1321,18 @@ public class GameController {
             if (player.hasRole(role))
                 resultPlayer = player;
         return resultPlayer;
+    }
+
+    /**
+     * return number of alive players that are still in game
+     * @return alive players' count
+     */
+    public int getAlivePlayersCount() {
+        int result = 0;
+        for (Player player : players)
+            if (player.isAlive() && !player.hasLeftGame())
+                result++;
+        return result;
     }
 
     /**

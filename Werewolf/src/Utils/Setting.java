@@ -14,7 +14,7 @@ public class Setting {
     // total number of mafias
     static private int numberOfMafias = (numberOfPlayers + 1) / 3;
     // how much time does a player can talk in an introduction phase
-    final static private LocalTime introductionTurnTime = LocalTime.of(0, 0, 30);
+    final static private LocalTime introductionTurnTime = LocalTime.of(0, 0, 1);
     // how much time does a player can make his turn in night
     static private LocalTime nightActionTime = LocalTime.of(0, 0, 30);
     // how much time does the server freeze game when someone is dead
