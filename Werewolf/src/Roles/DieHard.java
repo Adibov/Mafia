@@ -49,9 +49,8 @@ public class DieHard extends Citizen {
 
     /**
      * inquireCount setter
-     * @param inquireCount inquireCount new value
      */
-    public void setInquireCount(int inquireCount) {
-        this.inquireCount = inquireCount;
+    public void incrementInquireCount() {
+        inquireCount++;
     }
 }

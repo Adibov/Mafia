@@ -362,6 +362,13 @@ public class GameController {
             Player deadPlayer = mafiasTarget;
             if (doctorTarget != null && doctorTarget.equals(mafiasTarget))
                 deadPlayer = null;
+            else if (deadPlayer.hasRole("DieHard")) {
+                DieHard dieHard = (DieHard) deadPlayer;
+                if (dieHard.isInvulnerable()) {
+                    dieHard.setInvulnerable(false);
+                    deadPlayer = null;
+                }
+            }
             if (deadPlayer != null)
                 killPlayer(deadPlayer);
         }
@@ -424,6 +431,9 @@ public class GameController {
     public void announceGameStatus() {
         if (!dieHardHasInquire)
             return;
+        DieHard dieHard = (DieHard) getPlayerByRole("DieHard");
+        if (dieHard != null)
+            dieHard.incrementInquireCount();
         int mafiasNumber = 0, citizensNumber = 0;
         for (Player player : players)
             if (player.isAlive() && player.hasRole("Mafia"))
