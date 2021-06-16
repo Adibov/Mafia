@@ -1,0 +1,1 @@
+java -jar God.jar
