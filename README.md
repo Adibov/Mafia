@@ -1,5 +1,5 @@
 # Mafia Party Game
-![mafia-game](https://cdn-apabk.nitrocdn.com/QQUvjmPGpOGmpUxCkqAsSnVUjfEULAuk/assets/static/optimized/rev-9b34b5b/wp-content/uploads/2019/04/Mafia-Game-e1610793771411.jpg)
+![mafia-game](https://freeimage.host/i/RV2xtf)
 [Image Source](https://icebreakerideas.com/mafia-game/)
 
 ## Introduction
