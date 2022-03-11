@@ -1,5 +1,5 @@
 # Mafia Party Game
-![mafia-game](https://freeimage.host/i/RV2xtf)
+![mafia-game](assets/introduction%20image.jpeg)
 [Image Source](https://icebreakerideas.com/mafia-game/)
 
 ## Introduction
